@@ -1,11 +1,12 @@
-import React, { useState, useEffect } from 'react';
-import { useParams, Link, useNavigate } from 'react-router-dom';
-import { useAuth } from '../context/AuthContext';
-import api from '../services/api';
-import StatusBadge from '../components/StatusBadge';
-import PriorityBadge from '../components/PriorityBadge';
-import SlaCountdown from '../components/SlaCountdown';
-import Modal from '../components/Modal';
+import React, { useState, useEffect } from "react";
+import { useParams, Link, useNavigate } from "react-router-dom";
+import { useAuth } from "../context/AuthContext";
+import api from "../services/api";
+import StatusBadge from "../components/StatusBadge";
+import PriorityBadge from "../components/PriorityBadge";
+import SlaCountdown from "../components/SlaCountdown";
+import Modal from "../components/Modal";
+import ConfirmForm from "../components/ConfirmForm";
 
 export default function TicketDetail() {
   const { identifier } = useParams();
@@ -17,31 +18,34 @@ export default function TicketDetail() {
   const [attachments, setAttachments] = useState([]);
   const [activityLogs, setActivityLogs] = useState([]);
   const [technicians, setTechnicians] = useState([]);
+  const [teams, setTeams] = useState([]);
   const [categories, setCategories] = useState([]);
   const [loading, setLoading] = useState(true);
 
   // Message compose
-  const [replyMessage, setReplyMessage] = useState('');
+  const [replyMessage, setReplyMessage] = useState("");
   const [isInternalNote, setIsInternalNote] = useState(false);
   const [replyFiles, setReplyFiles] = useState([]);
   const [submittingReply, setSubmittingReply] = useState(false);
 
   // Triage / Action Modals
   const [triageModalOpen, setTriageModalOpen] = useState(false);
-  const [triagePriority, setTriagePriority] = useState('');
-  const [triageCategory, setTriageCategory] = useState('');
-  const [triageTech, setTriageTech] = useState('');
-  const [triageType, setTriageType] = useState('');
-  const [triageNote, setTriageNote] = useState('');
+  const [triagePriority, setTriagePriority] = useState("");
+  const [triageCategory, setTriageCategory] = useState("");
+  const [triageTech, setTriageTech] = useState("");
+  const [triageTeam, setTriageTeam] = useState("");
+  const [assignmentMode, setAssignmentMode] = useState("unassigned");
+  const [triageType, setTriageType] = useState("");
+  const [triageNote, setTriageNote] = useState("");
 
   // Resolution modal
   const [resolveModalOpen, setResolveModalOpen] = useState(false);
-  const [resolutionText, setResolutionText] = useState('');
+  const [resolutionText, setResolutionText] = useState("");
   const [resolving, setResolving] = useState(false);
 
   // Requestor Resolution Confirmation
   const [rating, setRating] = useState(5);
-  const [ratingFeedback, setRatingFeedback] = useState('');
+  const [ratingFeedback, setRatingFeedback] = useState("");
   const [confirming, setConfirming] = useState(false);
 
   const fetchTicket = async () => {
@@ -54,12 +58,20 @@ export default function TicketDetail() {
         setActivityLogs(res.data.activityLogs || []);
 
         setTriagePriority(res.data.ticket.priority);
-        setTriageCategory(res.data.ticket.category_id || '');
-        setTriageTech(res.data.ticket.assigned_technician_id || '');
+        setTriageCategory(res.data.ticket.category_id || "");
+        setTriageTech(res.data.ticket.assigned_technician_id || "");
+        setTriageTeam(res.data.ticket.assigned_team_id || "");
+        setAssignmentMode(
+          res.data.ticket.assigned_team_id
+            ? "team"
+            : res.data.ticket.assigned_technician_id
+              ? "individual"
+              : "unassigned",
+        );
         setTriageType(res.data.ticket.ticket_type);
       }
     } catch (err) {
-      console.error('Failed to load ticket:', err);
+      console.error("Failed to load ticket:", err);
     } finally {
       setLoading(false);
     }
@@ -69,13 +81,27 @@ export default function TicketDetail() {
     fetchTicket();
 
     if (isStaff) {
-      api.get('/users/technicians').then((res) => {
-        if (res.data.success) setTechnicians(res.data.technicians);
-      }).catch(() => {});
+      api
+        .get("/users/technicians")
+        .then((res) => {
+          if (res.data.success) setTechnicians(res.data.technicians);
+        })
+        .catch(() => {});
 
-      api.get('/categories').then((res) => {
-        if (res.data.success) setCategories(res.data.categories);
-      }).catch(() => {});
+      api
+        .get("/categories")
+        .then((res) => {
+          if (res.data.success) setCategories(res.data.categories);
+        })
+        .catch(() => {});
+
+      api
+        .get("/teams")
+        .then((res) => {
+          if (res.data.success)
+            setTeams((res.data.teams || []).filter((team) => team.is_active));
+        })
+        .catch(() => {});
     }
   }, [identifier, isStaff]);
 
@@ -86,20 +112,20 @@ export default function TicketDetail() {
     setSubmittingReply(true);
     try {
       const formData = new FormData();
-      formData.append('message', replyMessage);
-      formData.append('is_internal', isInternalNote);
-      replyFiles.forEach((f) => formData.append('attachments', f));
+      formData.append("message", replyMessage);
+      formData.append("is_internal", isInternalNote);
+      replyFiles.forEach((f) => formData.append("attachments", f));
 
       await api.post(`/tickets/${ticket.id}/messages`, formData, {
-        headers: { 'Content-Type': 'multipart/form-data' },
+        headers: { "Content-Type": "multipart/form-data" },
       });
 
-      setReplyMessage('');
+      setReplyMessage("");
       setIsInternalNote(false);
       setReplyFiles([]);
       fetchTicket();
     } catch (err) {
-      alert('Failed to post message.');
+      alert("Failed to post message.");
     } finally {
       setSubmittingReply(false);
     }
@@ -111,7 +137,7 @@ export default function TicketDetail() {
       await api.patch(`/tickets/${ticket.id}/status`, { status: newStatus });
       fetchTicket();
     } catch (err) {
-      alert('Failed to update status.');
+      alert("Failed to update status.");
     }
   };
 
@@ -122,15 +148,17 @@ export default function TicketDetail() {
       await api.patch(`/tickets/${ticket.id}/triage`, {
         priority: triagePriority,
         category_id: triageCategory,
-        assigned_technician_id: triageTech || null,
+        assigned_technician_id:
+          assignmentMode === "individual" ? triageTech || null : null,
+        assigned_team_id: assignmentMode === "team" ? triageTeam || null : null,
         ticket_type: triageType,
         internal_notes: triageNote || undefined,
       });
       setTriageModalOpen(false);
-      setTriageNote('');
+      setTriageNote("");
       fetchTicket();
     } catch (err) {
-      alert('Failed to triage ticket.');
+      alert("Failed to triage ticket.");
     }
   };
 
@@ -144,10 +172,10 @@ export default function TicketDetail() {
         resolution_notes: resolutionText.trim(),
       });
       setResolveModalOpen(false);
-      setResolutionText('');
+      setResolutionText("");
       fetchTicket();
     } catch (err) {
-      alert('Failed to record resolution.');
+      alert("Failed to record resolution.");
     } finally {
       setResolving(false);
     }
@@ -157,9 +185,11 @@ export default function TicketDetail() {
     if (!ticket) return;
     setConfirming(true);
     try {
-      let reopenReason = '';
-      if (action === 'reopen') {
-        reopenReason = prompt('Please explain why the issue persists:') || 'Issue not resolved';
+      let reopenReason = "";
+      if (action === "reopen") {
+        reopenReason =
+          prompt("Please explain why the issue persists:") ||
+          "Issue not resolved";
       }
       await api.post(`/tickets/${ticket.id}/confirm-resolution`, {
         action,
@@ -169,7 +199,7 @@ export default function TicketDetail() {
       });
       fetchTicket();
     } catch (err) {
-      alert('Failed to update resolution confirmation.');
+      alert("Failed to update resolution confirmation.");
     } finally {
       setConfirming(false);
     }
@@ -187,15 +217,28 @@ export default function TicketDetail() {
     return (
       <div className="max-w-2xl mx-auto px-4 py-16 text-center">
         <h2 className="text-2xl font-bold text-slate-800">Ticket Not Found</h2>
-        <p className="text-sm text-slate-500 mt-2 mb-6">The requested ticket does not exist or you do not have permission to view it.</p>
-        <Link to="/" className="px-4 py-2 bg-ndmu-green-800 text-white rounded-lg text-xs font-semibold">
+        <p className="text-sm text-slate-500 mt-2 mb-6">
+          The requested ticket does not exist or you do not have permission to
+          view it.
+        </p>
+        <Link
+          to="/"
+          className="px-4 py-2 bg-ndmu-green-800 text-white rounded-lg text-xs font-semibold"
+        >
           Return Home
         </Link>
       </div>
     );
   }
 
-  const statuses = ['new', 'assigned', 'in_progress', 'pending_user', 'resolved', 'closed'];
+  const statuses = [
+    "new",
+    "assigned",
+    "in_progress",
+    "pending_user",
+    "resolved",
+    "closed",
+  ];
   const currentStatusIndex = statuses.indexOf(ticket.status);
 
   return (
@@ -204,21 +247,33 @@ export default function TicketDetail() {
       <div className="flex flex-col justify-between gap-4 rounded-xl border border-slate-200 bg-white p-4 shadow-sm sm:flex-row sm:items-center">
         <div>
           <Link
-            to={isStaff ? '/staff/dashboard' : '/my-tickets'}
+            to={isStaff ? "/staff/dashboard" : "/my-tickets"}
             className="mb-1 inline-flex items-center gap-1 text-[11px] font-bold text-ndmu-green-700 hover:text-ndmu-green-900"
           >
-            <span className="material-symbols-outlined text-sm">arrow_back</span>
-            {isStaff ? 'Back to ICT-MIS Queues' : 'Back to My Requests'}
+            <span className="material-symbols-outlined text-sm">
+              arrow_back
+            </span>
+            {isStaff ? "Back to ICT-MIS Queues" : "Back to My Requests"}
           </Link>
-          <p className="text-[9px] font-black uppercase tracking-[0.18em] text-slate-400">Ticket workspace</p>
+          <p className="text-[9px] font-black uppercase tracking-[0.18em] text-slate-400">
+            Ticket workspace
+          </p>
           <div className="mt-1 flex flex-wrap items-center gap-2">
-            <h1 className="font-display text-2xl font-medium tracking-tight text-slate-900">{ticket.ticket_number}</h1>
+            <h1 className="font-display text-2xl font-medium tracking-tight text-slate-900">
+              {ticket.ticket_number}
+            </h1>
             <StatusBadge status={ticket.status} />
             <PriorityBadge priority={ticket.priority} />
-            <span className={`text-[10px] px-2 py-0.5 rounded font-semibold uppercase ${
-              ticket.ticket_type === 'incident' ? 'bg-rose-100 text-rose-800' : 'bg-blue-100 text-blue-800'
-            }`}>
-              {ticket.ticket_type === 'incident' ? 'Incident' : 'Service Request'}
+            <span
+              className={`text-[10px] px-2 py-0.5 rounded font-semibold uppercase ${
+                ticket.ticket_type === "incident"
+                  ? "bg-rose-100 text-rose-800"
+                  : "bg-blue-100 text-blue-800"
+              }`}
+            >
+              {ticket.ticket_type === "incident"
+                ? "Incident"
+                : "Service Request"}
             </span>
           </div>
         </div>
@@ -230,16 +285,20 @@ export default function TicketDetail() {
               onClick={() => setTriageModalOpen(true)}
               className="flex items-center gap-1.5 rounded-lg bg-slate-800 px-3.5 py-2 text-xs font-bold text-white shadow-sm transition-colors hover:bg-slate-700"
             >
-              <span className="material-symbols-outlined text-[16px]">tune</span>
+              <span className="material-symbols-outlined text-[16px]">
+                tune
+              </span>
               Triage / Assign
             </button>
 
-            {ticket.status !== 'resolved' && ticket.status !== 'closed' && (
+            {ticket.status !== "resolved" && ticket.status !== "closed" && (
               <button
                 onClick={() => setResolveModalOpen(true)}
                 className="flex items-center gap-1.5 rounded-lg bg-teal-700 px-3.5 py-2 text-xs font-bold text-white shadow-sm transition-colors hover:bg-teal-600"
               >
-                <span className="material-symbols-outlined text-[16px]">task_alt</span>
+                <span className="material-symbols-outlined text-[16px]">
+                  task_alt
+                </span>
                 Resolve Ticket
               </button>
             )}
@@ -273,22 +332,32 @@ export default function TicketDetail() {
                   <div
                     className={`w-7 h-7 rounded-full flex items-center justify-center font-bold text-xs transition-colors ${
                       isCurrent
-                        ? 'bg-ndmu-green-800 text-white ring-4 ring-ndmu-green-100'
+                        ? "bg-ndmu-green-800 text-white ring-4 ring-ndmu-green-100"
                         : isDone
-                        ? 'bg-ndmu-green-600 text-white'
-                        : 'bg-slate-200 text-slate-500'
+                          ? "bg-ndmu-green-600 text-white"
+                          : "bg-slate-200 text-slate-500"
                     }`}
                   >
-                    {isDone ? <span className="material-symbols-outlined text-[14px]">check</span> : idx + 1}
+                    {isDone ? (
+                      <span className="material-symbols-outlined text-[14px]">
+                        check
+                      </span>
+                    ) : (
+                      idx + 1
+                    )}
                   </div>
-                  <span className={`capitalize ${isCurrent ? 'font-bold text-ndmu-green-900' : 'text-slate-500'}`}>
-                    {st.replace('_', ' ')}
+                  <span
+                    className={`capitalize ${isCurrent ? "font-bold text-ndmu-green-900" : "text-slate-500"}`}
+                  >
+                    {st.replace("_", " ")}
                   </span>
                 </div>
                 {idx < statuses.length - 1 && (
                   <div
                     className={`flex-1 h-1 mx-3 rounded ${
-                      idx < currentStatusIndex ? 'bg-ndmu-green-600' : 'bg-slate-200'
+                      idx < currentStatusIndex
+                        ? "bg-ndmu-green-600"
+                        : "bg-slate-200"
                     }`}
                   ></div>
                 )}
@@ -304,8 +373,12 @@ export default function TicketDetail() {
         <div className="space-y-4">
           {/* Ticket Header & Description Card */}
           <div className="rounded-xl border border-slate-200 bg-white p-5 shadow-sm">
-            <p className="text-[9px] font-black uppercase tracking-[0.16em] text-ndmu-green-700">Request summary</p>
-            <h2 className="mb-3 mt-1 font-display text-xl font-medium text-slate-900">{ticket.title}</h2>
+            <p className="text-[9px] font-black uppercase tracking-[0.16em] text-ndmu-green-700">
+              Request summary
+            </p>
+            <h2 className="mb-3 mt-1 font-display text-xl font-medium text-slate-900">
+              {ticket.title}
+            </h2>
             <div className="whitespace-pre-wrap rounded-lg border border-slate-100 bg-slate-50/70 p-3 text-xs leading-relaxed text-slate-700">
               {ticket.description}
             </div>
@@ -314,18 +387,24 @@ export default function TicketDetail() {
             {ticket.custom_fields && (
               <div className="mt-4 pt-4 border-t border-slate-100">
                 <div className="text-xs font-bold text-slate-800 uppercase tracking-wider mb-2 flex items-center gap-1">
-                  <span className="material-symbols-outlined text-[16px] text-ndmu-green-700">tune</span>
+                  <span className="material-symbols-outlined text-[16px] text-ndmu-green-700">
+                    tune
+                  </span>
                   Service Specific Answers
                 </div>
                 <div className="grid grid-cols-1 gap-2 rounded-lg border border-emerald-100 bg-emerald-50/40 p-3 text-xs sm:grid-cols-2">
                   {Object.entries(
-                    typeof ticket.custom_fields === 'string'
-                      ? JSON.parse(ticket.custom_fields || '{}')
-                      : ticket.custom_fields
+                    typeof ticket.custom_fields === "string"
+                      ? JSON.parse(ticket.custom_fields || "{}")
+                      : ticket.custom_fields,
                   ).map(([k, v]) => (
                     <div key={k}>
-                      <span className="font-semibold text-slate-500 capitalize">{k.replace('_', ' ')}: </span>
-                      <span className="font-bold text-slate-800">{String(v)}</span>
+                      <span className="font-semibold text-slate-500 capitalize">
+                        {k.replace("_", " ")}:{" "}
+                      </span>
+                      <span className="font-bold text-slate-800">
+                        {String(v)}
+                      </span>
                     </div>
                   ))}
                 </div>
@@ -347,8 +426,12 @@ export default function TicketDetail() {
                       rel="noopener noreferrer"
                       className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-lg text-xs font-semibold border border-slate-200 transition-colors"
                     >
-                      <span className="material-symbols-outlined text-[16px]">attachment</span>
-                      <span className="truncate max-w-[150px]">{att.original_name}</span>
+                      <span className="material-symbols-outlined text-[16px]">
+                        attachment
+                      </span>
+                      <span className="truncate max-w-[150px]">
+                        {att.original_name}
+                      </span>
                     </a>
                   ))}
                 </div>
@@ -357,10 +440,12 @@ export default function TicketDetail() {
           </div>
 
           {/* Requestor Resolution Confirmation Banner if Resolved */}
-          {ticket.status === 'resolved' && (
+          {ticket.status === "resolved" && (
             <div className="rounded-xl border border-teal-200 bg-teal-50 p-4 shadow-sm">
               <div className="flex items-center gap-2 text-teal-900 font-bold text-sm mb-2">
-                <span className="material-symbols-outlined text-xl text-teal-700">verified</span>
+                <span className="material-symbols-outlined text-xl text-teal-700">
+                  verified
+                </span>
                 Resolution Details
               </div>
               <p className="text-xs text-teal-950 whitespace-pre-wrap bg-white p-3 rounded-xl border border-teal-100 mb-4">
@@ -369,7 +454,9 @@ export default function TicketDetail() {
 
               <div className="pt-3 border-t border-teal-200 flex flex-wrap items-center justify-between gap-4">
                 <div className="flex items-center gap-2">
-                  <span className="text-xs font-semibold text-teal-900">Rate Service:</span>
+                  <span className="text-xs font-semibold text-teal-900">
+                    Rate Service:
+                  </span>
                   <div className="flex">
                     {[1, 2, 3, 4, 5].map((star) => (
                       <button
@@ -377,7 +464,7 @@ export default function TicketDetail() {
                         type="button"
                         onClick={() => setRating(star)}
                         className={`material-symbols-outlined text-[20px] ${
-                          star <= rating ? 'text-amber-400' : 'text-slate-300'
+                          star <= rating ? "text-amber-400" : "text-slate-300"
                         }`}
                       >
                         star
@@ -388,14 +475,14 @@ export default function TicketDetail() {
 
                 <div className="flex items-center gap-2">
                   <button
-                    onClick={() => handleResolutionConfirmation('confirm')}
+                    onClick={() => handleResolutionConfirmation("confirm")}
                     disabled={confirming}
                     className="px-4 py-2 bg-teal-800 hover:bg-teal-700 text-white font-bold text-xs rounded-xl shadow-sm transition-colors"
                   >
                     Confirm & Close Ticket
                   </button>
                   <button
-                    onClick={() => handleResolutionConfirmation('reopen')}
+                    onClick={() => handleResolutionConfirmation("reopen")}
                     disabled={confirming}
                     className="px-4 py-2 bg-rose-600 hover:bg-rose-500 text-white font-bold text-xs rounded-xl transition-colors"
                   >
@@ -418,47 +505,55 @@ export default function TicketDetail() {
                   key={msg.id}
                   className={`rounded-xl border p-3.5 text-xs shadow-sm transition-all ${
                     msg.is_internal
-                      ? 'bg-amber-50/90 border-amber-300 text-amber-950 ring-1 ring-amber-200'
-                      : msg.sender_role === 'technician' || msg.sender_role === 'admin'
-                      ? 'bg-blue-50/70 border-blue-200 text-slate-800 ml-4 sm:ml-8'
-                      : 'bg-white border-slate-200 text-slate-800 mr-4 sm:mr-8'
+                      ? "bg-amber-50/90 border-amber-300 text-amber-950 ring-1 ring-amber-200"
+                      : msg.sender_role === "technician" ||
+                          msg.sender_role === "admin"
+                        ? "bg-blue-50/70 border-blue-200 text-slate-800 ml-4 sm:ml-8"
+                        : "bg-white border-slate-200 text-slate-800 mr-4 sm:mr-8"
                   }`}
                 >
                   <div className="flex items-center justify-between mb-1.5">
                     <div className="flex items-center gap-2">
-                      <span className="font-extrabold text-slate-900">{msg.sender_name}</span>
+                      <span className="font-extrabold text-slate-900">
+                        {msg.sender_name}
+                      </span>
                       <span
                         className={`px-1.5 py-0.5 rounded text-[10px] font-bold uppercase ${
-                          msg.sender_role === 'admin' || msg.sender_role === 'technician'
-                            ? 'bg-blue-600 text-white'
-                            : 'bg-slate-200 text-slate-700'
+                          msg.sender_role === "admin" ||
+                          msg.sender_role === "technician"
+                            ? "bg-blue-600 text-white"
+                            : "bg-slate-200 text-slate-700"
                         }`}
                       >
                         {msg.sender_role}
                       </span>
                       {msg.is_internal ? (
                         <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-amber-200 text-amber-800 flex items-center gap-0.5">
-                          <span className="material-symbols-outlined text-[12px]">lock</span>
+                          <span className="material-symbols-outlined text-[12px]">
+                            lock
+                          </span>
                           Internal Staff Note
                         </span>
                       ) : null}
                     </div>
                     <span className="text-[10px] text-slate-400">
                       {new Date(msg.created_at).toLocaleString([], {
-                        month: 'short',
-                        day: 'numeric',
-                        hour: '2-digit',
-                        minute: '2-digit',
+                        month: "short",
+                        day: "numeric",
+                        hour: "2-digit",
+                        minute: "2-digit",
                       })}
                     </span>
                   </div>
-                  <p className="whitespace-pre-wrap leading-relaxed">{msg.message}</p>
+                  <p className="whitespace-pre-wrap leading-relaxed">
+                    {msg.message}
+                  </p>
                 </div>
               ))}
             </div>
 
             {/* Compose Reply Form */}
-            {ticket.status !== 'closed' && (
+            {ticket.status !== "closed" && (
               <form
                 onSubmit={handlePostMessage}
                 className="space-y-3 rounded-xl border border-slate-200 bg-white p-4 shadow-sm"
@@ -485,15 +580,15 @@ export default function TicketDetail() {
                   rows={3}
                   placeholder={
                     isInternalNote
-                      ? 'Type internal diagnosis, technician notes, or handover comments...'
-                      : 'Type your reply to the requestor...'
+                      ? "Type internal diagnosis, technician notes, or handover comments..."
+                      : "Type your reply to the requestor..."
                   }
                   value={replyMessage}
                   onChange={(e) => setReplyMessage(e.target.value)}
                   className={`w-full px-3 py-2 text-xs rounded-xl border focus:ring-2 focus:outline-none ${
                     isInternalNote
-                      ? 'bg-amber-50/50 border-amber-300 focus:ring-amber-500 text-amber-950'
-                      : 'bg-white border-slate-300 focus:ring-ndmu-green-500 text-slate-800'
+                      ? "bg-amber-50/50 border-amber-300 focus:ring-amber-500 text-amber-950"
+                      : "bg-white border-slate-300 focus:ring-ndmu-green-500 text-slate-800"
                   }`}
                 />
 
@@ -501,18 +596,26 @@ export default function TicketDetail() {
                   <input
                     type="file"
                     multiple
-                    onChange={(e) => setReplyFiles(Array.from(e.target.files || []))}
+                    onChange={(e) =>
+                      setReplyFiles(Array.from(e.target.files || []))
+                    }
                     className="text-xs text-slate-500 file:mr-2 file:py-1.5 file:px-3 file:rounded-lg file:border-0 file:text-xs file:font-semibold file:bg-slate-100 hover:file:bg-slate-200"
                   />
                   <button
                     type="submit"
                     disabled={submittingReply}
                     className={`px-5 py-2 text-white font-bold text-xs rounded-xl shadow-sm transition-all flex items-center gap-1.5 ${
-                      isInternalNote ? 'bg-amber-700 hover:bg-amber-600' : 'bg-ndmu-green-800 hover:bg-ndmu-green-700'
+                      isInternalNote
+                        ? "bg-amber-700 hover:bg-amber-600"
+                        : "bg-ndmu-green-800 hover:bg-ndmu-green-700"
                     }`}
                   >
-                    <span className="material-symbols-outlined text-[16px]">send</span>
-                    {isInternalNote ? 'Save Internal Note' : 'Send Public Reply'}
+                    <span className="material-symbols-outlined text-[16px]">
+                      send
+                    </span>
+                    {isInternalNote
+                      ? "Save Internal Note"
+                      : "Send Public Reply"}
                   </button>
                 </div>
               </form>
@@ -530,46 +633,81 @@ export default function TicketDetail() {
 
             <div className="space-y-3 text-xs">
               <div>
-                <span className="text-slate-400 block font-medium">SLA Resolution Target</span>
-                <SlaCountdown targetDate={ticket.sla_due_resolution} isCompleted={ticket.status === 'resolved' || ticket.status === 'closed'} />
+                <span className="text-slate-400 block font-medium">
+                  SLA Resolution Target
+                </span>
+                <SlaCountdown
+                  targetDate={ticket.sla_due_resolution}
+                  isCompleted={
+                    ticket.status === "resolved" || ticket.status === "closed"
+                  }
+                />
               </div>
 
               <div>
-                <span className="text-slate-400 block font-medium">Category</span>
-                <span className="font-bold text-slate-800">{ticket.category_name || 'General'}</span>
+                <span className="text-slate-400 block font-medium">
+                  Category
+                </span>
+                <span className="font-bold text-slate-800">
+                  {ticket.category_name || "General"}
+                </span>
               </div>
 
               <div>
-                <span className="text-slate-400 block font-medium">Assigned Technician</span>
-                <span className="font-bold text-slate-800">{ticket.assigned_technician_name || 'Unassigned'}</span>
+                <span className="text-slate-400 block font-medium">
+                  Assigned to
+                </span>
+                <span className="font-bold text-slate-800">
+                  {ticket.assigned_technician_name ||
+                    ticket.assigned_team_name ||
+                    "Unassigned"}
+                </span>
               </div>
 
               <div>
-                <span className="text-slate-400 block font-medium">Requestor Name</span>
-                <span className="font-bold text-slate-800">{ticket.requestor_name}</span>
+                <span className="text-slate-400 block font-medium">
+                  Requestor Name
+                </span>
+                <span className="font-bold text-slate-800">
+                  {ticket.requestor_name}
+                </span>
               </div>
 
               <div>
-                <span className="text-slate-400 block font-medium">Requestor Email</span>
-                <span className="font-bold text-slate-800">{ticket.requestor_email}</span>
+                <span className="text-slate-400 block font-medium">
+                  Requestor Email
+                </span>
+                <span className="font-bold text-slate-800">
+                  {ticket.requestor_email}
+                </span>
               </div>
 
               {ticket.requestor_department && (
                 <div>
-                  <span className="text-slate-400 block font-medium">College / Department</span>
-                  <span className="font-bold text-slate-800">{ticket.requestor_department}</span>
+                  <span className="text-slate-400 block font-medium">
+                    College / Department
+                  </span>
+                  <span className="font-bold text-slate-800">
+                    {ticket.requestor_department}
+                  </span>
                 </div>
               )}
 
               {ticket.location_office && (
                 <div>
-                  <span className="text-slate-400 block font-medium">Location</span>
-                  <span className="font-bold text-slate-800">{ticket.location_office}</span>
+                  <span className="text-slate-400 block font-medium">
+                    Location
+                  </span>
+                  <span className="font-bold text-slate-800">
+                    {ticket.location_office}
+                  </span>
                 </div>
               )}
 
               <div>
-                <span className="text-slate-400 block font-medium">Tracking Code</span>
+                <span className="text-slate-400 block font-medium">
+                  Tracking Code
+                </span>
                 <span className="font-mono bg-slate-100 px-2 py-0.5 rounded font-bold text-slate-700">
                   {ticket.tracking_code}
                 </span>
@@ -581,16 +719,30 @@ export default function TicketDetail() {
           {isStaff && activityLogs.length > 0 && (
             <div className="space-y-3 rounded-xl border border-slate-200 bg-white p-4 shadow-sm">
               <h3 className="text-xs font-bold text-slate-800 uppercase tracking-wider pb-3 border-b border-slate-100 flex items-center gap-1.5">
-                <span className="material-symbols-outlined text-[16px] text-slate-500">history</span>
+                <span className="material-symbols-outlined text-[16px] text-slate-500">
+                  history
+                </span>
                 Audit Trail
               </h3>
 
               <div className="space-y-3 max-h-72 overflow-y-auto pr-1">
                 {activityLogs.map((log) => (
-                  <div key={log.id} className="text-[11px] border-l-2 border-ndmu-green-700 pl-3 py-0.5">
-                    <div className="font-bold text-slate-800">{log.action_type}: {log.comment || `${log.old_value} → ${log.new_value}`}</div>
+                  <div
+                    key={log.id}
+                    className="text-[11px] border-l-2 border-ndmu-green-700 pl-3 py-0.5"
+                  >
+                    <div className="font-bold text-slate-800">
+                      {log.action_type}:{" "}
+                      {log.comment || `${log.old_value} → ${log.new_value}`}
+                    </div>
                     <div className="text-[10px] text-slate-400">
-                      By {log.actor_name} &bull; {new Date(log.created_at).toLocaleString([], { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' })}
+                      By {log.actor_name} &bull;{" "}
+                      {new Date(log.created_at).toLocaleString([], {
+                        month: "short",
+                        day: "numeric",
+                        hour: "2-digit",
+                        minute: "2-digit",
+                      })}
                     </div>
                   </div>
                 ))}
@@ -601,10 +753,22 @@ export default function TicketDetail() {
       </div>
 
       {/* Triage / Assignment Modal */}
-      <Modal isOpen={triageModalOpen} onClose={() => setTriageModalOpen(false)} title={`Triage Ticket #${ticket.ticket_number}`}>
-        <form onSubmit={handleTriageSubmit} className="space-y-4 text-xs">
+      <Modal
+        isOpen={triageModalOpen}
+        onClose={() => setTriageModalOpen(false)}
+        title={`Triage Ticket #${ticket.ticket_number}`}
+      >
+        <ConfirmForm
+          onConfirm={handleTriageSubmit}
+          title="Save ticket triage?"
+          description="Apply the ticket classification, priority, assignment, and internal triage note."
+          confirmLabel="Save changes"
+          className="space-y-4 text-xs"
+        >
           <div>
-            <label className="block font-semibold text-slate-700 mb-1">Ticket Type</label>
+            <label className="block font-semibold text-slate-700 mb-1">
+              Ticket Type
+            </label>
             <select
               value={triageType}
               onChange={(e) => setTriageType(e.target.value)}
@@ -616,7 +780,9 @@ export default function TicketDetail() {
           </div>
 
           <div>
-            <label className="block font-semibold text-slate-700 mb-1">Priority</label>
+            <label className="block font-semibold text-slate-700 mb-1">
+              Priority
+            </label>
             <select
               value={triagePriority}
               onChange={(e) => setTriagePriority(e.target.value)}
@@ -631,34 +797,94 @@ export default function TicketDetail() {
           </div>
 
           <div>
-            <label className="block font-semibold text-slate-700 mb-1">Category</label>
+            <label className="block font-semibold text-slate-700 mb-1">
+              Category
+            </label>
             <select
               value={triageCategory}
               onChange={(e) => setTriageCategory(e.target.value)}
               className="w-full px-3 py-2 bg-white border border-slate-300 rounded-lg"
             >
               {categories.map((c) => (
-                <option key={c.id} value={c.id}>{c.name}</option>
+                <option key={c.id} value={c.id}>
+                  {c.name}
+                </option>
               ))}
             </select>
           </div>
 
           <div>
-            <label className="block font-semibold text-slate-700 mb-1">Assign Technician</label>
-            <select
-              value={triageTech}
-              onChange={(e) => setTriageTech(e.target.value)}
-              className="w-full px-3 py-2 bg-white border border-slate-300 rounded-lg"
-            >
-              <option value="">-- Unassigned (Triage Queue) --</option>
-              {technicians.map((t) => (
-                <option key={t.id} value={t.id}>{t.full_name} ({t.role})</option>
+            <label className="mb-2 block font-semibold text-slate-700">
+              Assignment
+            </label>
+            <div className="grid grid-cols-3 gap-2 rounded-lg bg-slate-100 p-1">
+              {[
+                ["unassigned", "Triage queue"],
+                ["team", "Team"],
+                ["individual", "Individual"],
+              ].map(([mode, label]) => (
+                <button
+                  key={mode}
+                  type="button"
+                  onClick={() => setAssignmentMode(mode)}
+                  className={`rounded-md px-2 py-2 text-[11px] font-bold transition ${
+                    assignmentMode === mode
+                      ? "bg-white text-ndmu-green-800 shadow-sm"
+                      : "text-slate-500 hover:text-slate-700"
+                  }`}
+                >
+                  {label}
+                </button>
               ))}
-            </select>
+            </div>
           </div>
 
+          {assignmentMode === "team" && (
+            <div>
+              <label className="block font-semibold text-slate-700 mb-1">
+                Assign Team
+              </label>
+              <select
+                required
+                value={triageTeam}
+                onChange={(e) => setTriageTeam(e.target.value)}
+                className="w-full px-3 py-2 bg-white border border-slate-300 rounded-lg"
+              >
+                <option value="">-- Select active team --</option>
+                {teams.map((team) => (
+                  <option key={team.id} value={team.id}>
+                    {team.name}
+                  </option>
+                ))}
+              </select>
+            </div>
+          )}
+
+          {assignmentMode === "individual" && (
+            <div>
+              <label className="block font-semibold text-slate-700 mb-1">
+                Assign Individual
+              </label>
+              <select
+                required
+                value={triageTech}
+                onChange={(e) => setTriageTech(e.target.value)}
+                className="w-full px-3 py-2 bg-white border border-slate-300 rounded-lg"
+              >
+                <option value="">-- Select active staff member --</option>
+                {technicians.map((t) => (
+                  <option key={t.id} value={t.id}>
+                    {t.full_name} ({t.role})
+                  </option>
+                ))}
+              </select>
+            </div>
+          )}
+
           <div>
-            <label className="block font-semibold text-slate-700 mb-1">Internal Triage Note (Optional)</label>
+            <label className="block font-semibold text-slate-700 mb-1">
+              Internal Triage Note (Optional)
+            </label>
             <textarea
               rows={2}
               placeholder="e.g. Assigned to hardware tech for urgent lab check."
@@ -683,18 +909,29 @@ export default function TicketDetail() {
               Save Changes
             </button>
           </div>
-        </form>
+        </ConfirmForm>
       </Modal>
 
       {/* Resolve Modal */}
-      <Modal isOpen={resolveModalOpen} onClose={() => setResolveModalOpen(false)} title={`Resolve Ticket #${ticket.ticket_number}`}>
-        <form onSubmit={handleResolveSubmit} className="space-y-4 text-xs">
+      <Modal
+        isOpen={resolveModalOpen}
+        onClose={() => setResolveModalOpen(false)}
+        title={`Resolve Ticket #${ticket.ticket_number}`}
+      >
+        <ConfirmForm
+          onConfirm={handleResolveSubmit}
+          title="Mark ticket as resolved?"
+          description="The resolution notes will be sent to the requestor and the ticket will move to resolved status."
+          confirmLabel="Mark as resolved"
+          className="space-y-4 text-xs"
+        >
           <div>
             <label className="block font-semibold text-slate-700 mb-1">
               Resolution Notes <span className="text-rose-500">*</span>
             </label>
             <p className="text-[11px] text-slate-500 mb-2">
-              Explain the actions performed, cause of the issue, or credentials provisioned. This will be sent to the requestor.
+              Explain the actions performed, cause of the issue, or credentials
+              provisioned. This will be sent to the requestor.
             </p>
             <textarea
               required
@@ -719,10 +956,10 @@ export default function TicketDetail() {
               disabled={resolving}
               className="px-4 py-2 bg-teal-800 hover:bg-teal-700 text-white font-bold rounded-lg shadow-sm"
             >
-              {resolving ? 'Recording...' : 'Mark as Resolved'}
+              {resolving ? "Recording..." : "Mark as Resolved"}
             </button>
           </div>
-        </form>
+        </ConfirmForm>
       </Modal>
     </main>
   );

@@ -1,372 +1,637 @@
--- ==========================================================
--- NDMU MIS IT Ticketing System Database Dump
--- Notre Dame of Marbel University
--- Compatible with MySQL 5.7+, MySQL 8.0+, MariaDB, and phpMyAdmin Import
--- ==========================================================
+/*!40101 SET @OLD_CHARACTER_SET_CLIENT=@@CHARACTER_SET_CLIENT */;
+/*!40101 SET @OLD_CHARACTER_SET_RESULTS=@@CHARACTER_SET_RESULTS */;
+/*!40101 SET @OLD_COLLATION_CONNECTION=@@COLLATION_CONNECTION */;
+/*!50503 SET NAMES utf8mb4 */;
+/*!40103 SET @OLD_TIME_ZONE=@@TIME_ZONE */;
+/*!40103 SET TIME_ZONE='+00:00' */;
+/*!40014 SET @OLD_UNIQUE_CHECKS=@@UNIQUE_CHECKS, UNIQUE_CHECKS=0 */;
+/*!40014 SET @OLD_FOREIGN_KEY_CHECKS=@@FOREIGN_KEY_CHECKS, FOREIGN_KEY_CHECKS=0 */;
+/*!40101 SET @OLD_SQL_MODE=@@SQL_MODE, SQL_MODE='NO_AUTO_VALUE_ON_ZERO' */;
+/*!40111 SET @OLD_SQL_NOTES=@@SQL_NOTES, SQL_NOTES=0 */;
 
-SET SQL_MODE = "NO_AUTO_VALUE_ON_ZERO";
-START TRANSACTION;
-SET time_zone = "+00:00";
-SET NAMES utf8mb4;
-SET FOREIGN_KEY_CHECKS = 0;
-
--- --------------------------------------------------------
--- Database Creation & Selection
--- --------------------------------------------------------
-CREATE DATABASE IF NOT EXISTS `ndmu_ticketing` DEFAULT CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
+CREATE DATABASE IF NOT EXISTS `ndmu_ticketing`
+  CHARACTER SET utf8
+  COLLATE utf8_general_ci;
 USE `ndmu_ticketing`;
 
--- --------------------------------------------------------
--- Table structure for table `departments`
--- --------------------------------------------------------
-DROP TABLE IF EXISTS `departments`;
-CREATE TABLE IF NOT EXISTS `departments` (
-  `id` INT AUTO_INCREMENT PRIMARY KEY,
-  `name` VARCHAR(150) NOT NULL,
-  `code` VARCHAR(50) NOT NULL UNIQUE,
-  `type` ENUM('college', 'office', 'unit', 'other') DEFAULT 'office',
-  `created_at` TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+-- Complete fresh-install schema. The changes formerly maintained as
+-- migrations 001 through 017 are represented here.
 
--- --------------------------------------------------------
--- Dumping data for table `departments`
--- --------------------------------------------------------
-INSERT INTO `departments` (`id`, `name`, `code`, `type`) VALUES
-(1, 'Management Information Systems (MIS)', 'MIS', 'office'),
-(2, 'College of Computer Studies', 'CCS', 'college'),
-(3, 'College of Engineering', 'COE', 'college'),
-(4, 'College of Business Administration', 'CBA', 'college'),
-(5, 'College of Education', 'CED', 'college'),
-(6, 'College of Arts and Sciences', 'CAS', 'college'),
-(7, 'College of Health Sciences', 'CHS', 'college'),
-(8, 'Integrated Basic Education Department', 'IBED', 'college'),
-(9, 'Office of the University President', 'OP', 'office'),
-(10, 'Office of the Registrar', 'REG', 'office'),
-(11, 'Finance & Accounting Office', 'FAO', 'office'),
-(12, 'Human Resource Development Office', 'HRDO', 'office'),
-(13, 'University Library', 'LIB', 'unit'),
-(14, 'Physical Plant & General Services', 'PPGS', 'office');
-
--- --------------------------------------------------------
--- Table structure for table `teams`
--- --------------------------------------------------------
-DROP TABLE IF EXISTS `teams`;
-CREATE TABLE IF NOT EXISTS `teams` (
-  `id` INT AUTO_INCREMENT PRIMARY KEY,
-  `name` VARCHAR(100) NOT NULL UNIQUE,
-  `description` VARCHAR(255) NULL,
-  `created_at` TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
-
--- --------------------------------------------------------
--- Dumping data for table `teams`
--- --------------------------------------------------------
-INSERT INTO `teams` (`id`, `name`, `description`) VALUES
-(1, 'Network & Infrastructure Team', 'Campus Wi-Fi, LAN, fiber backbone, routers, and switches'),
-(2, 'Systems & Web Applications Team', 'EIS, Schoology LMS, SATP, SMS, and database operations'),
-(3, 'Hardware & Desktop Support Team', 'Workstations, laptops, printers, scanners, and OS maintenance'),
-(4, 'User Accounts & Access Support', 'Google Workspace, password resets, role permissions, and onboarding');
-
--- --------------------------------------------------------
--- Table structure for table `users`
--- --------------------------------------------------------
-DROP TABLE IF EXISTS `users`;
-CREATE TABLE IF NOT EXISTS `users` (
-  `id` INT AUTO_INCREMENT PRIMARY KEY,
-  `google_id` VARCHAR(255) NULL UNIQUE,
-  `email` VARCHAR(150) NOT NULL UNIQUE,
-  `password_hash` VARCHAR(255) NULL,
-  `full_name` VARCHAR(150) NOT NULL,
-  `id_number` VARCHAR(50) NULL,
-  `role` ENUM('admin', 'team_leader', 'technician', 'requestor') NOT NULL DEFAULT 'requestor',
-  `department_id` INT NULL,
-  `department_name` VARCHAR(150) NULL,
-  `team_id` INT NULL,
-  `phone` VARCHAR(30) NULL,
-  `avatar_url` VARCHAR(255) NULL,
-  `is_active` TINYINT(1) NOT NULL DEFAULT 1,
-  `created_at` TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-  `updated_at` TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
-  FOREIGN KEY (`department_id`) REFERENCES `departments`(`id`) ON DELETE SET NULL,
-  FOREIGN KEY (`team_id`) REFERENCES `teams`(`id`) ON DELETE SET NULL
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
-
--- --------------------------------------------------------
--- Dumping data for table `users`
--- Passwords:
--- admin@ndmu.edu.ph       -> admin123
--- lead.network@ndmu.edu.ph -> lead123
--- tech1@ndmu.edu.ph       -> tech123
--- tech2@ndmu.edu.ph       -> tech123
--- faculty@ndmu.edu.ph     -> user123
--- student@ndmu.edu.ph     -> user123
--- --------------------------------------------------------
-INSERT INTO `users` (`id`, `email`, `password_hash`, `full_name`, `id_number`, `role`, `department_id`, `department_name`, `team_id`, `phone`) VALUES
-(1, 'admin@ndmu.edu.ph', '$2a$10$Dw/kUZN3wPsWeBWWqdfBeuFOJcZN5GFxH9WXGfFAzyrelf3tPM2YS', 'Engr. Nelson Tan (MIS Director)', 'EMP-00101', 'admin', 1, 'Management Information Systems (MIS)', NULL, '09171234567'),
-(2, 'lead.network@ndmu.edu.ph', '$2a$10$ll9O0VH6mJw930Yf8h1oaeDxs4U2m8Tc2dpw7urppMWv2nEvezZR6', 'Engr. Roberto Gomez (Network Team Lead)', 'EMP-00105', 'team_leader', 1, 'Management Information Systems (MIS)', 1, '09175551234'),
-(3, 'tech1@ndmu.edu.ph', '$2a$10$x0Z9jvSWSihS5na38s4v6ON6U.Q4KRTB2jDXNBEIAg4uNrZixkrqe', 'Mark Dela Cruz (Network Specialist)', 'EMP-00102', 'technician', 1, 'Management Information Systems (MIS)', 1, '09187654321'),
-(4, 'tech2@ndmu.edu.ph', '$2a$10$x0Z9jvSWSihS5na38s4v6ON6U.Q4KRTB2jDXNBEIAg4uNrZixkrqe', 'Sarah Santos (Hardware & Systems Tech)', 'EMP-00103', 'technician', 1, 'Management Information Systems (MIS)', 3, '09191122334'),
-(5, 'faculty@ndmu.edu.ph', '$2a$10$a2WX1.xLip4B02Kv.m/bTOU.ZjY1eoWbfHhfp5w5F3F86BncLtiFK', 'Prof. Juan Luna (CCS Faculty)', 'EMP-00204', 'requestor', 2, 'College of Computer Studies', NULL, '09205556677'),
-(6, 'student@ndmu.edu.ph', '$2a$10$a2WX1.xLip4B02Kv.m/bTOU.ZjY1eoWbfHhfp5w5F3F86BncLtiFK', 'Maria Clara (BSIT Student)', 'STU-2024-0089', 'requestor', 2, 'College of Computer Studies', NULL, '09223334455');
-
--- --------------------------------------------------------
--- Table structure for table `categories`
--- --------------------------------------------------------
-DROP TABLE IF EXISTS `categories`;
-CREATE TABLE IF NOT EXISTS `categories` (
-  `id` INT AUTO_INCREMENT PRIMARY KEY,
-  `name` VARCHAR(100) NOT NULL UNIQUE,
-  `description` VARCHAR(255) NULL,
-  `icon` VARCHAR(50) DEFAULT 'help_outline',
-  `is_active` TINYINT(1) NOT NULL DEFAULT 1,
-  `created_at` TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
-
--- --------------------------------------------------------
--- Dumping data for table `categories`
--- --------------------------------------------------------
-INSERT INTO `categories` (`id`, `name`, `description`, `icon`) VALUES
-(1, 'Accounts & Access', 'Institutional email, Schoology, EIS, SATP, password reset', 'account_circle'),
-(2, 'Network', 'Wi-Fi, LAN, internet, access points', 'wifi'),
-(3, 'Hardware & Devices', 'Desktop, laptop, printer, scanner', 'computer'),
-(4, 'Software & Systems', 'Installation, licensing, application problems, EIS, Schoology', 'code'),
-(5, 'Multimedia & AV Support', 'Projector, display, AV equipment in auditoriums and classrooms', 'videocam'),
-(6, 'Server & Infrastructure', 'Server, VM, database, and cloud service issues', 'storage'),
-(7, 'Printing & Scanning', 'Printer setup, toner replenishment, printing errors', 'print'),
-(8, 'Data & Academic Reports', 'Reports, exports, data corrections', 'table_chart'),
-(9, 'Other MIS Assistance', 'General IT and hardware inquiries', 'help_outline');
-
--- --------------------------------------------------------
--- Table structure for table `subcategories` (Service Catalog Items)
--- --------------------------------------------------------
-DROP TABLE IF EXISTS `subcategories`;
-CREATE TABLE IF NOT EXISTS `subcategories` (
-  `id` INT AUTO_INCREMENT PRIMARY KEY,
-  `category_id` INT NOT NULL,
-  `name` VARCHAR(150) NOT NULL,
-  `description` VARCHAR(255) NULL,
-  `default_type` ENUM('service_request', 'incident') NOT NULL DEFAULT 'service_request',
-  `default_priority` ENUM('low', 'medium', 'high', 'urgent', 'critical') NOT NULL DEFAULT 'medium',
-  `form_schema` JSON NULL,
-  `is_active` TINYINT(1) NOT NULL DEFAULT 1,
-  `created_at` TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-  FOREIGN KEY (`category_id`) REFERENCES `categories`(`id`) ON DELETE CASCADE
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
-
--- --------------------------------------------------------
--- Dumping data for table `subcategories`
--- --------------------------------------------------------
-INSERT INTO `subcategories` (`id`, `category_id`, `name`, `description`, `default_type`, `default_priority`, `form_schema`) VALUES
-(1, 1, 'Institutional Email Account', 'Provision new @ndmu.edu.ph Google Workspace account', 'service_request', 'medium', '[{\"id\":\"employee_id\",\"label\":\"Employee / Student ID Number\",\"type\":\"text\",\"required\":true,\"placeholder\":\"e.g. EMP-2026-0012 or STU-2024-0089\"},{\"id\":\"full_name\",\"label\":\"Full Legal Name\",\"type\":\"text\",\"required\":true,\"placeholder\":\"First Name, Middle Name, Last Name\"},{\"id\":\"department\",\"label\":\"College / Department / Office\",\"type\":\"text\",\"required\":true},{\"id\":\"backup_email\",\"label\":\"Personal Recovery Email\",\"type\":\"email\",\"required\":true,\"placeholder\":\"name@gmail.com\"},{\"id\":\"contact_number\",\"label\":\"Active Contact Number\",\"type\":\"tel\",\"required\":true}]'),
-(2, 1, 'Schoology Account Setup', 'Schoology LMS instructor profile and course enrollment', 'service_request', 'medium', '[{\"id\":\"employee_id\",\"label\":\"Employee / Faculty ID\",\"type\":\"text\",\"required\":true},{\"id\":\"full_name\",\"label\":\"Faculty Name\",\"type\":\"text\",\"required\":true},{\"id\":\"college_dept\",\"label\":\"College / Academic Department\",\"type\":\"text\",\"required\":true},{\"id\":\"subjects_handled\",\"label\":\"Subjects / Course Codes Handled\",\"type\":\"textarea\",\"required\":true,\"placeholder\":\"e.g. CS101, IT202, Web Development 1\"},{\"id\":\"institutional_email\",\"label\":\"Institutional Email (@ndmu.edu.ph)\",\"type\":\"email\",\"required\":true}]'),
-(3, 1, 'EIS Faculty/Student Portal Access', 'Access to EIS Grading, Student, or Department modules', 'service_request', 'medium', '[{\"id\":\"id_number\",\"label\":\"ID Number\",\"type\":\"text\",\"required\":true},{\"id\":\"role_type\",\"label\":\"Portal Type\",\"type\":\"select\",\"options\":[\"Faculty Grading Portal\",\"Student Portal\",\"Registrar / Admin Module\",\"Dean / Dept Head Review\"],\"required\":true},{\"id\":\"department\",\"label\":\"College / Office\",\"type\":\"text\",\"required\":true},{\"id\":\"justification\",\"label\":\"Access Justification / Remarks\",\"type\":\"textarea\",\"required\":false}]'),
-(4, 1, 'Password Reset Request', 'Reset password for Google Email, Schoology, or EIS', 'service_request', 'high', '[{\"id\":\"account_type\",\"label\":\"System / Account\",\"type\":\"select\",\"options\":[\"Google Institutional Email\",\"Schoology LMS\",\"EIS Portal\",\"Windows Workstation\"],\"required\":true},{\"id\":\"username_email\",\"label\":\"Username or Email Address\",\"type\":\"text\",\"required\":true},{\"id\":\"verification_id\",\"label\":\"University ID Number\",\"type\":\"text\",\"required\":true},{\"id\":\"phone_sms\",\"label\":\"Mobile Number for Temporary Password\",\"type\":\"tel\",\"required\":true}]'),
-(5, 2, 'Campus Wi-Fi Connectivity Issue', 'Troubleshoot NDMU-Student or NDMU-Faculty Wi-Fi issues', 'incident', 'high', '[{\"id\":\"building\",\"label\":\"Building Name\",\"type\":\"select\",\"options\":[\"Main Building\",\"CCS Building\",\"Engineering Building\",\"Gymnasium\",\"Student Center\",\"Library\",\"IBED Complex\",\"Administration Building\"],\"required\":true},{\"id\":\"room_office\",\"label\":\"Room / Floor / Area\",\"type\":\"text\",\"required\":true,\"placeholder\":\"e.g. 2nd Floor Hallway / Room 204\"},{\"id\":\"device_type\",\"label\":\"Device Encountering Issue\",\"type\":\"select\",\"options\":[\"Laptop (Windows/Mac)\",\"Mobile Phone (Android/iOS)\",\"Tablet\",\"Other\"],\"required\":true},{\"id\":\"ssid_network\",\"label\":\"Wi-Fi Network Name (SSID)\",\"type\":\"select\",\"options\":[\"NDMU-Faculty\",\"NDMU-Student\",\"NDMU-Guest\",\"Other\"],\"required\":true},{\"id\":\"error_symptom\",\"label\":\"Symptom\",\"type\":\"select\",\"options\":[\"Cannot connect / Invalid password\",\"Connected but No Internet\",\"Weak Signal / Dropping\",\"Slow speed\"],\"required\":true}]'),
-(6, 2, 'LAN Cable / Office Wallport Issue', 'Damaged network cable or dead Ethernet wall jack', 'incident', 'medium', '[{\"id\":\"building\",\"label\":\"Building\",\"type\":\"text\",\"required\":true},{\"id\":\"room_office\",\"label\":\"Room / Office\",\"type\":\"text\",\"required\":true},{\"id\":\"port_number\",\"label\":\"Wallport Number (if labeled)\",\"type\":\"text\",\"required\":false},{\"id\":\"description\",\"label\":\"Problem Details\",\"type\":\"textarea\",\"required\":true}]'),
-(7, 3, 'Desktop PC Malfunction', 'Hardware diagnosis for laboratory or office PC', 'incident', 'medium', '[{\"id\":\"asset_tag\",\"label\":\"Equipment Asset Tag / Serial No.\",\"type\":\"text\",\"required\":false,\"placeholder\":\"e.g. NDMU-PC-2024-045\"},{\"id\":\"location\",\"label\":\"Building & Room\",\"type\":\"text\",\"required\":true},{\"id\":\"symptoms\",\"label\":\"Hardware Symptom\",\"type\":\"select\",\"options\":[\"No power / Will not turn on\",\"Beeping / Blue screen\",\"Overheating / Loud fan\",\"Monitor display blank\",\"Keyboard / Mouse unresponsive\"],\"required\":true},{\"id\":\"description\",\"label\":\"Additional Observations\",\"type\":\"textarea\",\"required\":true}]'),
-(8, 4, 'Software Installation Request', 'Install educational or productivity software', 'service_request', 'low', '[{\"id\":\"software_name\",\"label\":\"Software / Program Requested\",\"type\":\"text\",\"required\":true,\"placeholder\":\"e.g. SPSS, AutoCAD, Visual Studio Code, Zoom\"},{\"id\":\"location_pc\",\"label\":\"Laboratory / Office Computer Location\",\"type\":\"text\",\"required\":true},{\"id\":\"academic_purpose\",\"label\":\"Academic or Office Purpose\",\"type\":\"textarea\",\"required\":true}]'),
-(9, 5, 'Classroom Projector / Smart TV Setup', 'AV equipment preparation for class lectures or academic events', 'service_request', 'medium', '[{\"id\":\"venue\",\"label\":\"Classroom / Venue\",\"type\":\"text\",\"required\":true,\"placeholder\":\"e.g. CCS Lab 3, Engineering Amphitheater\"},{\"id\":\"date_time\",\"label\":\"Date & Time Needed\",\"type\":\"text\",\"required\":true,\"placeholder\":\"e.g. Monday Sept 8, 8:00 AM - 11:00 AM\"},{\"id\":\"equipment_list\",\"label\":\"Equipment Needed\",\"type\":\"select\",\"options\":[\"LCD Projector & Screen\",\"HDMI / VGA Cable Adapter\",\"Wireless Microphones & Speaker\",\"Full Event Audio-Visual Setup\"],\"required\":true}]');
-
--- --------------------------------------------------------
--- Table structure for table `tickets`
--- --------------------------------------------------------
-DROP TABLE IF EXISTS `tickets`;
-CREATE TABLE IF NOT EXISTS `tickets` (
-  `id` INT AUTO_INCREMENT PRIMARY KEY,
-  `ticket_number` VARCHAR(50) NOT NULL UNIQUE,
-  `tracking_code` VARCHAR(64) NOT NULL UNIQUE,
-  `ticket_type` ENUM('service_request', 'incident') NOT NULL DEFAULT 'service_request',
-  `title` VARCHAR(255) NOT NULL,
-  `description` TEXT NOT NULL,
-  `category_id` INT NULL,
-  `subcategory_id` INT NULL,
-  `priority` ENUM('low', 'medium', 'high', 'urgent', 'critical') NOT NULL DEFAULT 'medium',
-  `status` ENUM('new', 'assigned', 'in_progress', 'pending_user', 'resolved', 'closed') NOT NULL DEFAULT 'new',
-  `custom_fields` JSON NULL,
-  `requestor_user_id` INT NULL,
-  `requestor_name` VARCHAR(150) NOT NULL,
-  `requestor_email` VARCHAR(150) NOT NULL,
-  `requestor_id_number` VARCHAR(50) NULL,
-  `requestor_phone` VARCHAR(50) NULL,
-  `requestor_department` VARCHAR(150) NULL,
-  `location_office` VARCHAR(150) NULL,
-  `assigned_team_id` INT NULL,
-  `assigned_technician_id` INT NULL,
-  `resolution_notes` TEXT NULL,
-  `resolution_date` DATETIME NULL,
-  `sla_due_response` DATETIME NULL,
-  `sla_due_resolution` DATETIME NULL,
-  `sla_responded_at` DATETIME NULL,
-  `sla_resolved_at` DATETIME NULL,
-  `rating` INT NULL,
-  `rating_feedback` TEXT NULL,
-  `closed_at` DATETIME NULL,
-  `auto_close_at` DATETIME NULL,
-  `created_at` TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-  `updated_at` TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
-  FOREIGN KEY (`category_id`) REFERENCES `categories`(`id`) ON DELETE SET NULL,
-  FOREIGN KEY (`subcategory_id`) REFERENCES `subcategories`(`id`) ON DELETE SET NULL,
-  FOREIGN KEY (`requestor_user_id`) REFERENCES `users`(`id`) ON DELETE SET NULL,
-  FOREIGN KEY (`assigned_team_id`) REFERENCES `teams`(`id`) ON DELETE SET NULL,
-  FOREIGN KEY (`assigned_technician_id`) REFERENCES `users`(`id`) ON DELETE SET NULL,
-  INDEX `idx_ticket_number` (`ticket_number`),
-  INDEX `idx_status` (`status`),
-  INDEX `idx_priority` (`priority`),
-  INDEX `idx_assigned_tech` (`assigned_technician_id`),
-  INDEX `idx_requestor_email` (`requestor_email`)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
-
--- --------------------------------------------------------
--- Dumping data for table `tickets`
--- --------------------------------------------------------
-INSERT INTO `tickets` (`id`, `ticket_number`, `tracking_code`, `ticket_type`, `title`, `description`, `category_id`, `subcategory_id`, `priority`, `status`, `custom_fields`, `requestor_user_id`, `requestor_name`, `requestor_email`, `requestor_id_number`, `requestor_department`, `location_office`, `assigned_team_id`, `assigned_technician_id`, `sla_due_response`, `sla_due_resolution`, `sla_responded_at`) VALUES
-(1, 'MIS-2026-000124', 'NDMU-TRK-100124', 'incident', 'Wi-Fi Access Point offline in CCS Building 2nd Floor', 'Students and faculty cannot connect to NDMU-Student Wi-Fi near Room 204.', 2, 5, 'high', 'new', '{\"building\": \"CCS Building\", \"room_office\": \"Room 204\", \"device_type\": \"Laptop\", \"ssid_network\": \"NDMU-Student\", \"error_symptom\": \"No Internet / Signal Dropping\"}', 5, 'Juan Dela Cruz', 'j.delacruz@ndmu.edu.ph', 'EMP-00204', 'College of Computer Studies', 'CCS Building Room 204', 1, NULL, DATE_ADD(NOW(), INTERVAL 4 HOUR), DATE_ADD(NOW(), INTERVAL 12 HOUR), NULL),
-(2, 'MIS-2026-000123', 'NDMU-TRK-100123', 'service_request', 'Schoology Account Setup for 3 New CAS Instructors', 'Please create Schoology course instructor profiles for 3 newly hired General Education instructors.', 1, 2, 'medium', 'assigned', '{\"employee_id\": \"EMP-00310\", \"college_dept\": \"College of Arts and Sciences\", \"subjects_handled\": \"GE 101, GE 104, Ethics\", \"institutional_email\": \"cas.sec@ndmu.edu.ph\"}', NULL, 'CAS Department Secretary', 'cas.sec@ndmu.edu.ph', 'EMP-00301', 'College of Arts and Sciences', 'CAS Dean Office', 4, 4, DATE_ADD(NOW(), INTERVAL 8 HOUR), DATE_ADD(NOW(), INTERVAL 24 HOUR), DATE_SUB(NOW(), INTERVAL 1 HOUR)),
-(3, 'MIS-2026-000122', 'NDMU-TRK-100122', 'incident', 'EIS Faculty Grading Portal Error during Grade Finalization', 'Faculty gets "Database Lock Timeout" when saving section grades for CS201.', 1, 3, 'high', 'in_progress', '{\"affected_system\": \"EIS Enterprise Portal\", \"error_message\": \"Database Lock Timeout 504\", \"scope_affected\": \"Entire College / Department\"}', NULL, 'Jane Santos', 'jane.santos@ndmu.edu.ph', 'EMP-00215', 'College of Computer Studies', 'CCS Faculty Room', 2, 3, DATE_SUB(NOW(), INTERVAL 2 HOUR), DATE_ADD(NOW(), INTERVAL 6 HOUR), DATE_SUB(NOW(), INTERVAL 3 HOUR));
-
--- --------------------------------------------------------
--- Table structure for table `ticket_messages`
--- --------------------------------------------------------
-DROP TABLE IF EXISTS `ticket_messages`;
-CREATE TABLE IF NOT EXISTS `ticket_messages` (
-  `id` INT AUTO_INCREMENT PRIMARY KEY,
-  `ticket_id` INT NOT NULL,
-  `sender_user_id` INT NULL,
-  `sender_name` VARCHAR(150) NOT NULL,
-  `sender_role` VARCHAR(50) NOT NULL DEFAULT 'requestor',
-  `message` TEXT NOT NULL,
-  `is_internal` TINYINT(1) NOT NULL DEFAULT 0,
-  `created_at` TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-  FOREIGN KEY (`ticket_id`) REFERENCES `tickets`(`id`) ON DELETE CASCADE,
-  FOREIGN KEY (`sender_user_id`) REFERENCES `users`(`id`) ON DELETE SET NULL,
-  INDEX `idx_ticket_msg` (`ticket_id`, `is_internal`)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
-
--- --------------------------------------------------------
--- Dumping data for table `ticket_messages`
--- --------------------------------------------------------
-INSERT INTO `ticket_messages` (`id`, `ticket_id`, `sender_user_id`, `sender_name`, `sender_role`, `message`, `is_internal`) VALUES
-(1, 1, 5, 'Juan Dela Cruz', 'requestor', 'Students and faculty cannot connect to NDMU-Student Wi-Fi near Room 204.', 0),
-(2, 2, NULL, 'CAS Department Secretary', 'requestor', 'Please create Schoology course instructor profiles for 3 newly hired General Education instructors.', 0),
-(3, 2, 4, 'Sarah Santos (Hardware & Systems Tech)', 'technician', 'Request acknowledged. Reviewing faculty masterlist from HRDO.', 0),
-(4, 3, NULL, 'Jane Santos', 'requestor', 'Faculty gets "Database Lock Timeout" when saving section grades for CS201.', 0),
-(5, 3, 3, 'Mark Dela Cruz (Network Specialist)', 'technician', 'Inspecting database session connection pool on main EIS node.', 1);
-
--- --------------------------------------------------------
--- Table structure for table `ticket_attachments`
--- --------------------------------------------------------
-DROP TABLE IF EXISTS `ticket_attachments`;
-CREATE TABLE IF NOT EXISTS `ticket_attachments` (
-  `id` INT AUTO_INCREMENT PRIMARY KEY,
-  `ticket_id` INT NOT NULL,
-  `message_id` INT NULL,
-  `filename` VARCHAR(255) NOT NULL,
-  `original_name` VARCHAR(255) NOT NULL,
-  `file_size` INT NOT NULL,
-  `mime_type` VARCHAR(100) NOT NULL,
-  `file_path` VARCHAR(255) NOT NULL,
-  `created_at` TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-  FOREIGN KEY (`ticket_id`) REFERENCES `tickets`(`id`) ON DELETE CASCADE,
-  FOREIGN KEY (`message_id`) REFERENCES `ticket_messages`(`id`) ON DELETE CASCADE
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
-
--- --------------------------------------------------------
--- Table structure for table `ticket_activity_logs`
--- --------------------------------------------------------
-DROP TABLE IF EXISTS `ticket_activity_logs`;
-CREATE TABLE IF NOT EXISTS `ticket_activity_logs` (
-  `id` INT AUTO_INCREMENT PRIMARY KEY,
-  `ticket_id` INT NOT NULL,
-  `actor_user_id` INT NULL,
-  `actor_name` VARCHAR(150) NOT NULL,
-  `action_type` VARCHAR(50) NOT NULL,
-  `old_value` VARCHAR(255) NULL,
-  `new_value` VARCHAR(255) NULL,
-  `comment` TEXT NULL,
-  `created_at` TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-  FOREIGN KEY (`ticket_id`) REFERENCES `tickets`(`id`) ON DELETE CASCADE,
-  FOREIGN KEY (`actor_user_id`) REFERENCES `users`(`id`) ON DELETE SET NULL
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
-
--- --------------------------------------------------------
--- Dumping data for table `ticket_activity_logs`
--- --------------------------------------------------------
-INSERT INTO `ticket_activity_logs` (`id`, `ticket_id`, `actor_user_id`, `actor_name`, `action_type`, `comment`) VALUES
-(1, 1, 5, 'Juan Dela Cruz', 'CREATED', 'Submitted via NDMU Service Desk'),
-(2, 2, NULL, 'CAS Department Secretary', 'CREATED', 'Submitted via NDMU Service Desk'),
-(3, 3, NULL, 'Jane Santos', 'CREATED', 'Submitted via NDMU Service Desk');
-
--- --------------------------------------------------------
--- Table structure for table `knowledge_base`
--- --------------------------------------------------------
-DROP TABLE IF EXISTS `knowledge_base`;
-CREATE TABLE IF NOT EXISTS `knowledge_base` (
-  `id` INT AUTO_INCREMENT PRIMARY KEY,
-  `title` VARCHAR(255) NOT NULL,
-  `slug` VARCHAR(255) NOT NULL UNIQUE,
-  `category` VARCHAR(100) NOT NULL,
-  `summary` VARCHAR(500) NULL,
-  `content` TEXT NOT NULL,
-  `author_id` INT NULL,
-  `views` INT DEFAULT 0,
-  `helpful_count` INT DEFAULT 0,
-  `is_published` TINYINT(1) DEFAULT 1,
-  `created_at` TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-  `updated_at` TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
-  FOREIGN KEY (`author_id`) REFERENCES `users`(`id`) ON DELETE SET NULL
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
-
--- --------------------------------------------------------
--- Dumping data for table `knowledge_base`
--- --------------------------------------------------------
-INSERT INTO `knowledge_base` (`id`, `title`, `slug`, `category`, `summary`, `content`, `views`, `helpful_count`, `is_published`) VALUES
-(1, 'How to Connect to NDMU Campus Wi-Fi (Students & Faculty)', 'how-to-connect-ndmu-wifi', 'Network', 'Instructions for connecting your laptops, Android, and iOS devices to NDMU-Student and NDMU-Faculty Wi-Fi networks.', '### Connecting to NDMU Campus Wi-Fi\n1. Turn on Wi-Fi on your device.\n2. Select **NDMU-Student** (for students) or **NDMU-Faculty** (for employees).\n3. In the authentication prompt, enter:\n   - **EAP Method**: PEAP\n   - **Phase 2 Authentication**: MSCHAPV2\n   - **CA Certificate**: Do not validate / Trust\n   - **Identity**: Your institutional email (e.g. `j.luna@ndmu.edu.ph`)\n   - **Password**: Your NDMU account password\n4. Tap **Connect**.\n\nIf you receive a certificate warning, accept and proceed. For guest access, please request a guest voucher from your event organizer.', 45, 12, 1),
-(2, 'Step-by-Step Guide: Resetting Your Institutional Google Password', 'reset-institutional-google-password', 'Accounts & Access', 'How to reset or recover your @ndmu.edu.ph Google Workspace account password.', '### Institutional Email Password Reset\nIf you have forgotten your password or are locked out:\n1. Visit accounts.google.com.\n2. Enter your full NDMU email address (`username@ndmu.edu.ph`).\n3. Click **\"Forgot Password?\"**.\n4. If you linked a recovery phone or secondary email, Google will send a 6-digit verification code.\n5. If recovery is not configured, submit a **Password Reset Request** ticket through this MIS Service Desk. An MIS technician will generate a temporary password and send it via SMS.', 28, 9, 1),
-(3, 'Accessing Schoology LMS for Academic Year 2026-2027', 'accessing-schoology-lms-guide', 'Software & Systems', 'Log in to Schoology using Single Sign-On (SSO) with your NDMU Google credentials.', '### Schoology LMS Login Procedure\nNDMU uses Google SSO for Schoology.\n1. Open your browser and navigate to **schoology.ndmu.edu.ph**.\n2. Click **\"Log in through Google\"**.\n3. Choose your `@ndmu.edu.ph` account.\n4. If your courses do not appear after 24 hours of enrollment confirmation, submit a **Schoology Account Setup** ticket to MIS.', 35, 14, 1);
-
--- --------------------------------------------------------
--- Table structure for table `announcements`
--- --------------------------------------------------------
 DROP TABLE IF EXISTS `announcements`;
-CREATE TABLE IF NOT EXISTS `announcements` (
-  `id` INT AUTO_INCREMENT PRIMARY KEY,
-  `title` VARCHAR(255) NOT NULL,
-  `content` TEXT NOT NULL,
-  `severity` ENUM('info', 'warning', 'urgent') DEFAULT 'info',
-  `is_active` TINYINT(1) DEFAULT 1,
-  `created_at` TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-  `expires_at` DATETIME NULL
+/*!40101 SET @saved_cs_client     = @@character_set_client */;
+/*!50503 SET character_set_client = utf8mb4 */;
+CREATE TABLE `announcements` (
+  `id` int(11) NOT NULL AUTO_INCREMENT,
+  `title` varchar(255) COLLATE utf8mb4_unicode_ci NOT NULL,
+  `content` text COLLATE utf8mb4_unicode_ci NOT NULL,
+  `severity` enum('info','warning','urgent') COLLATE utf8mb4_unicode_ci DEFAULT 'info',
+  `is_active` tinyint(1) DEFAULT 1,
+  `created_at` timestamp NOT NULL DEFAULT current_timestamp(),
+  `expires_at` datetime DEFAULT NULL,
+  PRIMARY KEY (`id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
-
--- --------------------------------------------------------
--- Dumping data for table `announcements`
--- --------------------------------------------------------
-INSERT INTO `announcements` (`id`, `title`, `content`, `severity`, `is_active`) VALUES
-(1, 'Scheduled Maintenance: Campus Core Switch Firmware Upgrade', 'MIS will perform routine core switch firmware updates this Saturday from 10:00 PM to 2:00 AM. Intermittent wired & Wi-Fi outages may occur during this maintenance window.', 'warning', 1),
-(2, 'EIS Faculty Grading Portal is Now Open for Midterm Encoding', 'Faculty members can now access the EIS Portal to encode Midterm grades. For password or access assistance, submit an Accounts ticket.', 'info', 1);
-
--- --------------------------------------------------------
--- Table structure for table `system_settings`
--- --------------------------------------------------------
+/*!40101 SET character_set_client = @saved_cs_client */;
+DROP TABLE IF EXISTS `categories`;
+/*!40101 SET @saved_cs_client     = @@character_set_client */;
+/*!50503 SET character_set_client = utf8mb4 */;
+CREATE TABLE `categories` (
+  `id` int(11) NOT NULL AUTO_INCREMENT,
+  `name` varchar(100) COLLATE utf8mb4_unicode_ci NOT NULL,
+  `description` varchar(255) COLLATE utf8mb4_unicode_ci DEFAULT NULL,
+  `icon` varchar(50) COLLATE utf8mb4_unicode_ci DEFAULT 'help_outline',
+  `is_active` tinyint(1) NOT NULL DEFAULT 1,
+  `created_at` timestamp NOT NULL DEFAULT current_timestamp(),
+  PRIMARY KEY (`id`),
+  UNIQUE KEY `name` (`name`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+/*!40101 SET character_set_client = @saved_cs_client */;
+DROP TABLE IF EXISTS `locations`;
+/*!40101 SET @saved_cs_client     = @@character_set_client */;
+/*!50503 SET character_set_client = utf8mb4 */;
+CREATE TABLE `locations` (
+  `id` int(11) NOT NULL AUTO_INCREMENT,
+  `name` varchar(180) COLLATE utf8mb4_unicode_ci NOT NULL,
+  `code` varchar(50) COLLATE utf8mb4_unicode_ci DEFAULT NULL,
+  `type` enum('college','office','unit','other') COLLATE utf8mb4_unicode_ci DEFAULT 'office',
+  `created_at` timestamp NOT NULL DEFAULT current_timestamp(),
+  `is_active` tinyint(1) NOT NULL DEFAULT 1,
+  PRIMARY KEY (`id`),
+  UNIQUE KEY `uq_locations_code` (`code`),
+  UNIQUE KEY `uq_locations_name` (`name`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+/*!40101 SET character_set_client = @saved_cs_client */;
+DROP TABLE IF EXISTS `knowledge_base`;
+/*!40101 SET @saved_cs_client     = @@character_set_client */;
+/*!50503 SET character_set_client = utf8mb4 */;
+CREATE TABLE `knowledge_base` (
+  `id` int(11) NOT NULL AUTO_INCREMENT,
+  `title` varchar(255) COLLATE utf8mb4_unicode_ci NOT NULL,
+  `slug` varchar(255) COLLATE utf8mb4_unicode_ci NOT NULL,
+  `category` varchar(100) COLLATE utf8mb4_unicode_ci NOT NULL,
+  `summary` varchar(500) COLLATE utf8mb4_unicode_ci DEFAULT NULL,
+  `content` text COLLATE utf8mb4_unicode_ci NOT NULL,
+  `author_id` int(11) DEFAULT NULL,
+  `views` int(11) DEFAULT 0,
+  `helpful_count` int(11) DEFAULT 0,
+  `is_published` tinyint(1) DEFAULT 1,
+  `created_at` timestamp NOT NULL DEFAULT current_timestamp(),
+  `updated_at` timestamp NOT NULL DEFAULT current_timestamp() ON UPDATE current_timestamp(),
+  PRIMARY KEY (`id`),
+  UNIQUE KEY `slug` (`slug`),
+  KEY `author_id` (`author_id`),
+  CONSTRAINT `knowledge_base_ibfk_1` FOREIGN KEY (`author_id`) REFERENCES `users` (`id`) ON DELETE SET NULL
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+/*!40101 SET character_set_client = @saved_cs_client */;
+DROP TABLE IF EXISTS `refresh_tokens`;
+/*!40101 SET @saved_cs_client     = @@character_set_client */;
+/*!50503 SET character_set_client = utf8mb4 */;
+CREATE TABLE `refresh_tokens` (
+  `id` bigint(20) unsigned NOT NULL AUTO_INCREMENT,
+  `user_id` int(11) NOT NULL,
+  `token_hash` char(64) COLLATE utf8mb4_unicode_ci NOT NULL,
+  `expires_at` datetime NOT NULL,
+  `revoked_at` datetime DEFAULT NULL,
+  `created_at` timestamp NOT NULL DEFAULT current_timestamp(),
+  `last_used_at` datetime DEFAULT NULL,
+  `user_agent` varchar(512) COLLATE utf8mb4_unicode_ci DEFAULT NULL,
+  `ip_address` varchar(64) COLLATE utf8mb4_unicode_ci DEFAULT NULL,
+  PRIMARY KEY (`id`),
+  UNIQUE KEY `token_hash` (`token_hash`),
+  KEY `idx_refresh_tokens_user_active` (`user_id`,`revoked_at`,`expires_at`),
+  CONSTRAINT `fk_refresh_tokens_user` FOREIGN KEY (`user_id`) REFERENCES `users` (`id`) ON DELETE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+/*!40101 SET character_set_client = @saved_cs_client */;
+DROP TABLE IF EXISTS `service_form_field_options`;
+/*!40101 SET @saved_cs_client     = @@character_set_client */;
+/*!50503 SET character_set_client = utf8mb4 */;
+CREATE TABLE `service_form_field_options` (
+  `id` int(11) NOT NULL AUTO_INCREMENT,
+  `field_id` int(11) NOT NULL,
+  `option_value` varchar(255) COLLATE utf8mb4_unicode_ci NOT NULL,
+  `option_label` varchar(255) COLLATE utf8mb4_unicode_ci NOT NULL,
+  `display_order` int(11) NOT NULL DEFAULT 0,
+  PRIMARY KEY (`id`),
+  UNIQUE KEY `uq_service_field_option` (`field_id`,`option_value`),
+  CONSTRAINT `fk_service_field_options_field` FOREIGN KEY (`field_id`) REFERENCES `service_form_fields` (`id`) ON DELETE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+/*!40101 SET character_set_client = @saved_cs_client */;
+DROP TABLE IF EXISTS `service_form_fields`;
+/*!40101 SET @saved_cs_client     = @@character_set_client */;
+/*!50503 SET character_set_client = utf8mb4 */;
+CREATE TABLE `service_form_fields` (
+  `id` int(11) NOT NULL AUTO_INCREMENT,
+  `subcategory_id` int(11) NOT NULL,
+  `field_key` varchar(100) COLLATE utf8mb4_unicode_ci NOT NULL,
+  `label` varchar(180) COLLATE utf8mb4_unicode_ci NOT NULL,
+  `input_type` varchar(40) COLLATE utf8mb4_unicode_ci NOT NULL DEFAULT 'text',
+  `placeholder` varchar(255) COLLATE utf8mb4_unicode_ci DEFAULT NULL,
+  `is_required` tinyint(1) NOT NULL DEFAULT 0,
+  `is_active` tinyint(1) NOT NULL DEFAULT 1,
+  `display_order` int(11) NOT NULL DEFAULT 0,
+  PRIMARY KEY (`id`),
+  UNIQUE KEY `uq_service_field_key` (`subcategory_id`,`field_key`),
+  CONSTRAINT `fk_service_fields_subcategory` FOREIGN KEY (`subcategory_id`) REFERENCES `subcategories` (`id`) ON DELETE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+/*!40101 SET character_set_client = @saved_cs_client */;
+DROP TABLE IF EXISTS `subcategories`;
+/*!40101 SET @saved_cs_client     = @@character_set_client */;
+/*!50503 SET character_set_client = utf8mb4 */;
+CREATE TABLE `subcategories` (
+  `id` int(11) NOT NULL AUTO_INCREMENT,
+  `category_id` int(11) NOT NULL,
+  `name` varchar(150) COLLATE utf8mb4_unicode_ci NOT NULL,
+  `description` varchar(255) COLLATE utf8mb4_unicode_ci DEFAULT NULL,
+  `default_type` enum('service_request','incident') COLLATE utf8mb4_unicode_ci NOT NULL DEFAULT 'service_request',
+  `default_priority` enum('low','medium','high','urgent','critical') COLLATE utf8mb4_unicode_ci NOT NULL DEFAULT 'medium',
+  `form_schema` longtext CHARACTER SET utf8mb4 COLLATE utf8mb4_bin DEFAULT NULL CHECK (json_valid(`form_schema`)),
+  `is_active` tinyint(1) NOT NULL DEFAULT 1,
+  `created_at` timestamp NOT NULL DEFAULT current_timestamp(),
+  PRIMARY KEY (`id`),
+  KEY `category_id` (`category_id`),
+  CONSTRAINT `subcategories_ibfk_1` FOREIGN KEY (`category_id`) REFERENCES `categories` (`id`) ON DELETE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+/*!40101 SET character_set_client = @saved_cs_client */;
 DROP TABLE IF EXISTS `system_settings`;
-CREATE TABLE IF NOT EXISTS `system_settings` (
-  `setting_key` VARCHAR(100) PRIMARY KEY,
-  `setting_value` TEXT NOT NULL,
-  `description` VARCHAR(255) NULL,
-  `updated_at` TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
+/*!40101 SET @saved_cs_client     = @@character_set_client */;
+/*!50503 SET character_set_client = utf8mb4 */;
+CREATE TABLE `system_settings` (
+  `setting_key` varchar(100) COLLATE utf8mb4_unicode_ci NOT NULL,
+  `setting_value` text COLLATE utf8mb4_unicode_ci NOT NULL,
+  `description` varchar(255) COLLATE utf8mb4_unicode_ci DEFAULT NULL,
+  `updated_at` timestamp NOT NULL DEFAULT current_timestamp() ON UPDATE current_timestamp(),
+  PRIMARY KEY (`setting_key`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+/*!40101 SET character_set_client = @saved_cs_client */;
+DROP TABLE IF EXISTS `team_memberships`;
+/*!40101 SET @saved_cs_client     = @@character_set_client */;
+/*!50503 SET character_set_client = utf8mb4 */;
+CREATE TABLE `team_memberships` (
+  `team_id` int(11) NOT NULL,
+  `user_id` int(11) NOT NULL,
+  `membership_role` enum('member','leader') COLLATE utf8mb4_unicode_ci NOT NULL DEFAULT 'member',
+  `is_active` tinyint(1) NOT NULL DEFAULT 1,
+  `joined_at` timestamp NOT NULL DEFAULT current_timestamp(),
+  PRIMARY KEY (`team_id`,`user_id`),
+  KEY `idx_team_memberships_user` (`user_id`,`is_active`),
+  CONSTRAINT `fk_team_memberships_team` FOREIGN KEY (`team_id`) REFERENCES `teams` (`id`) ON DELETE CASCADE,
+  CONSTRAINT `fk_team_memberships_user` FOREIGN KEY (`user_id`) REFERENCES `users` (`id`) ON DELETE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+/*!40101 SET character_set_client = @saved_cs_client */;
+DROP TABLE IF EXISTS `teams`;
+/*!40101 SET @saved_cs_client     = @@character_set_client */;
+/*!50503 SET character_set_client = utf8mb4 */;
+CREATE TABLE `teams` (
+  `id` int(11) NOT NULL AUTO_INCREMENT,
+  `name` varchar(100) COLLATE utf8mb4_unicode_ci NOT NULL,
+  `description` varchar(255) COLLATE utf8mb4_unicode_ci DEFAULT NULL,
+  `created_at` timestamp NOT NULL DEFAULT current_timestamp(),
+  `is_active` tinyint(1) NOT NULL DEFAULT 1,
+  PRIMARY KEY (`id`),
+  UNIQUE KEY `name` (`name`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+/*!40101 SET character_set_client = @saved_cs_client */;
+DROP TABLE IF EXISTS `ticket_activity_logs`;
+/*!40101 SET @saved_cs_client     = @@character_set_client */;
+/*!50503 SET character_set_client = utf8mb4 */;
+CREATE TABLE `ticket_activity_logs` (
+  `id` int(11) NOT NULL AUTO_INCREMENT,
+  `ticket_id` int(11) NOT NULL,
+  `actor_user_id` int(11) DEFAULT NULL,
+  `actor_name` varchar(150) COLLATE utf8mb4_unicode_ci NOT NULL,
+  `action_type` varchar(50) COLLATE utf8mb4_unicode_ci NOT NULL,
+  `old_value` varchar(255) COLLATE utf8mb4_unicode_ci DEFAULT NULL,
+  `new_value` varchar(255) COLLATE utf8mb4_unicode_ci DEFAULT NULL,
+  `comment` text COLLATE utf8mb4_unicode_ci DEFAULT NULL,
+  `created_at` timestamp NOT NULL DEFAULT current_timestamp(),
+  PRIMARY KEY (`id`),
+  KEY `ticket_id` (`ticket_id`),
+  KEY `actor_user_id` (`actor_user_id`),
+  CONSTRAINT `ticket_activity_logs_ibfk_1` FOREIGN KEY (`ticket_id`) REFERENCES `tickets` (`id`) ON DELETE CASCADE,
+  CONSTRAINT `ticket_activity_logs_ibfk_2` FOREIGN KEY (`actor_user_id`) REFERENCES `users` (`id`) ON DELETE SET NULL
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+/*!40101 SET character_set_client = @saved_cs_client */;
+DROP TABLE IF EXISTS `ticket_assignments`;
+/*!40101 SET @saved_cs_client     = @@character_set_client */;
+/*!50503 SET character_set_client = utf8mb4 */;
+CREATE TABLE `ticket_assignments` (
+  `id` bigint(20) unsigned NOT NULL AUTO_INCREMENT,
+  `ticket_id` int(11) NOT NULL,
+  `assigned_team_id` int(11) DEFAULT NULL,
+  `assigned_user_id` int(11) DEFAULT NULL,
+  `assigned_by_user_id` int(11) DEFAULT NULL,
+  `created_at` timestamp NOT NULL DEFAULT current_timestamp(),
+  PRIMARY KEY (`id`),
+  KEY `idx_ticket_assignments_ticket` (`ticket_id`,`created_at`),
+  KEY `assigned_team_id` (`assigned_team_id`),
+  KEY `assigned_user_id` (`assigned_user_id`),
+  KEY `assigned_by_user_id` (`assigned_by_user_id`),
+  CONSTRAINT `ticket_assignments_ibfk_1` FOREIGN KEY (`ticket_id`) REFERENCES `tickets` (`id`) ON DELETE CASCADE,
+  CONSTRAINT `ticket_assignments_ibfk_2` FOREIGN KEY (`assigned_team_id`) REFERENCES `teams` (`id`) ON DELETE SET NULL,
+  CONSTRAINT `ticket_assignments_ibfk_3` FOREIGN KEY (`assigned_user_id`) REFERENCES `users` (`id`) ON DELETE SET NULL,
+  CONSTRAINT `ticket_assignments_ibfk_4` FOREIGN KEY (`assigned_by_user_id`) REFERENCES `users` (`id`) ON DELETE SET NULL
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+/*!40101 SET character_set_client = @saved_cs_client */;
+DROP TABLE IF EXISTS `ticket_attachments`;
+/*!40101 SET @saved_cs_client     = @@character_set_client */;
+/*!50503 SET character_set_client = utf8mb4 */;
+CREATE TABLE `ticket_attachments` (
+  `id` int(11) NOT NULL AUTO_INCREMENT,
+  `ticket_id` int(11) NOT NULL,
+  `message_id` int(11) DEFAULT NULL,
+  `filename` varchar(255) COLLATE utf8mb4_unicode_ci NOT NULL,
+  `original_name` varchar(255) COLLATE utf8mb4_unicode_ci NOT NULL,
+  `file_size` int(11) NOT NULL,
+  `mime_type` varchar(100) COLLATE utf8mb4_unicode_ci NOT NULL,
+  `file_path` varchar(255) COLLATE utf8mb4_unicode_ci NOT NULL,
+  `created_at` timestamp NOT NULL DEFAULT current_timestamp(),
+  PRIMARY KEY (`id`),
+  KEY `ticket_id` (`ticket_id`),
+  KEY `message_id` (`message_id`),
+  CONSTRAINT `ticket_attachments_ibfk_1` FOREIGN KEY (`ticket_id`) REFERENCES `tickets` (`id`) ON DELETE CASCADE,
+  CONSTRAINT `ticket_attachments_ibfk_2` FOREIGN KEY (`message_id`) REFERENCES `ticket_messages` (`id`) ON DELETE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+/*!40101 SET character_set_client = @saved_cs_client */;
+DROP TABLE IF EXISTS `ticket_custom_field_values`;
+/*!40101 SET @saved_cs_client     = @@character_set_client */;
+/*!50503 SET character_set_client = utf8mb4 */;
+CREATE TABLE `ticket_custom_field_values` (
+  `ticket_id` int(11) NOT NULL,
+  `field_key` varchar(100) COLLATE utf8mb4_unicode_ci NOT NULL,
+  `field_value` text COLLATE utf8mb4_unicode_ci DEFAULT NULL,
+  PRIMARY KEY (`ticket_id`,`field_key`),
+  CONSTRAINT `fk_ticket_custom_values_ticket` FOREIGN KEY (`ticket_id`) REFERENCES `tickets` (`id`) ON DELETE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+/*!40101 SET character_set_client = @saved_cs_client */;
+DROP TABLE IF EXISTS `ticket_messages`;
+/*!40101 SET @saved_cs_client     = @@character_set_client */;
+/*!50503 SET character_set_client = utf8mb4 */;
+CREATE TABLE `ticket_messages` (
+  `id` int(11) NOT NULL AUTO_INCREMENT,
+  `ticket_id` int(11) NOT NULL,
+  `sender_user_id` int(11) DEFAULT NULL,
+  `sender_name` varchar(150) COLLATE utf8mb4_unicode_ci NOT NULL,
+  `sender_role` varchar(50) COLLATE utf8mb4_unicode_ci NOT NULL DEFAULT 'requestor',
+  `message` text COLLATE utf8mb4_unicode_ci NOT NULL,
+  `is_internal` tinyint(1) NOT NULL DEFAULT 0,
+  `created_at` timestamp NOT NULL DEFAULT current_timestamp(),
+  PRIMARY KEY (`id`),
+  KEY `sender_user_id` (`sender_user_id`),
+  KEY `idx_ticket_msg` (`ticket_id`,`is_internal`),
+  CONSTRAINT `ticket_messages_ibfk_1` FOREIGN KEY (`ticket_id`) REFERENCES `tickets` (`id`) ON DELETE CASCADE,
+  CONSTRAINT `ticket_messages_ibfk_2` FOREIGN KEY (`sender_user_id`) REFERENCES `users` (`id`) ON DELETE SET NULL
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+/*!40101 SET character_set_client = @saved_cs_client */;
+DROP TABLE IF EXISTS `ticket_priority_history`;
+/*!40101 SET @saved_cs_client     = @@character_set_client */;
+/*!50503 SET character_set_client = utf8mb4 */;
+CREATE TABLE `ticket_priority_history` (
+  `id` bigint(20) unsigned NOT NULL AUTO_INCREMENT,
+  `ticket_id` int(11) NOT NULL,
+  `old_priority` varchar(50) DEFAULT NULL,
+  `new_priority` varchar(50) NOT NULL,
+  `changed_by_user_id` int(11) DEFAULT NULL,
+  `created_at` timestamp NOT NULL DEFAULT current_timestamp(),
+  PRIMARY KEY (`id`),
+  KEY `idx_ticket_priority_history_ticket` (`ticket_id`,`created_at`),
+  KEY `changed_by_user_id` (`changed_by_user_id`),
+  CONSTRAINT `ticket_priority_history_ibfk_1` FOREIGN KEY (`ticket_id`) REFERENCES `tickets` (`id`) ON DELETE CASCADE,
+  CONSTRAINT `ticket_priority_history_ibfk_2` FOREIGN KEY (`changed_by_user_id`) REFERENCES `users` (`id`) ON DELETE SET NULL
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+/*!40101 SET character_set_client = @saved_cs_client */;
+DROP TABLE IF EXISTS `ticket_requestors`;
+/*!40101 SET @saved_cs_client     = @@character_set_client */;
+/*!50503 SET character_set_client = utf8mb4 */;
+CREATE TABLE `ticket_requestors` (
+  `ticket_id` int(11) NOT NULL,
+  `user_id` int(11) DEFAULT NULL,
+  `full_name` varchar(150) COLLATE utf8mb4_unicode_ci NOT NULL,
+  `email` varchar(150) COLLATE utf8mb4_unicode_ci NOT NULL,
+  `department_id` int(11) DEFAULT NULL,
+  `department_name_snapshot` varchar(150) COLLATE utf8mb4_unicode_ci DEFAULT NULL,
+  `location_office` varchar(150) COLLATE utf8mb4_unicode_ci DEFAULT NULL,
+  `created_at` timestamp NOT NULL DEFAULT current_timestamp(),
+  PRIMARY KEY (`ticket_id`),
+  KEY `idx_ticket_requestors_user` (`user_id`),
+  KEY `idx_ticket_requestors_email` (`email`),
+  KEY `idx_ticket_requestors_department` (`department_id`),
+  CONSTRAINT `fk_ticket_requestors_location` FOREIGN KEY (`department_id`) REFERENCES `locations` (`id`) ON DELETE SET NULL,
+  CONSTRAINT `fk_ticket_requestors_ticket` FOREIGN KEY (`ticket_id`) REFERENCES `tickets` (`id`) ON DELETE CASCADE,
+  CONSTRAINT `fk_ticket_requestors_user` FOREIGN KEY (`user_id`) REFERENCES `users` (`id`) ON DELETE SET NULL
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+/*!40101 SET character_set_client = @saved_cs_client */;
+DROP TABLE IF EXISTS `ticket_sequences`;
+/*!40101 SET @saved_cs_client     = @@character_set_client */;
+/*!50503 SET character_set_client = utf8mb4 */;
+CREATE TABLE `ticket_sequences` (
+  `sequence_year` int(11) NOT NULL,
+  `last_number` int(11) NOT NULL DEFAULT 0,
+  `updated_at` timestamp NOT NULL DEFAULT current_timestamp() ON UPDATE current_timestamp(),
+  PRIMARY KEY (`sequence_year`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+/*!40101 SET character_set_client = @saved_cs_client */;
+DROP TABLE IF EXISTS `ticket_status_history`;
+/*!40101 SET @saved_cs_client     = @@character_set_client */;
+/*!50503 SET character_set_client = utf8mb4 */;
+CREATE TABLE `ticket_status_history` (
+  `id` bigint(20) unsigned NOT NULL AUTO_INCREMENT,
+  `ticket_id` int(11) NOT NULL,
+  `old_status` varchar(50) DEFAULT NULL,
+  `new_status` varchar(50) NOT NULL,
+  `changed_by_user_id` int(11) DEFAULT NULL,
+  `created_at` timestamp NOT NULL DEFAULT current_timestamp(),
+  PRIMARY KEY (`id`),
+  KEY `idx_ticket_status_history_ticket` (`ticket_id`,`created_at`),
+  KEY `changed_by_user_id` (`changed_by_user_id`),
+  CONSTRAINT `ticket_status_history_ibfk_1` FOREIGN KEY (`ticket_id`) REFERENCES `tickets` (`id`) ON DELETE CASCADE,
+  CONSTRAINT `ticket_status_history_ibfk_2` FOREIGN KEY (`changed_by_user_id`) REFERENCES `users` (`id`) ON DELETE SET NULL
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+/*!40101 SET character_set_client = @saved_cs_client */;
+DROP TABLE IF EXISTS `tickets`;
+/*!40101 SET @saved_cs_client     = @@character_set_client */;
+/*!50503 SET character_set_client = utf8mb4 */;
+CREATE TABLE `tickets` (
+  `id` int(11) NOT NULL AUTO_INCREMENT,
+  `ticket_number` varchar(50) COLLATE utf8mb4_unicode_ci NOT NULL,
+  `tracking_code` varchar(64) COLLATE utf8mb4_unicode_ci NOT NULL,
+  `ticket_type` enum('service_request','incident') COLLATE utf8mb4_unicode_ci NOT NULL DEFAULT 'service_request',
+  `title` varchar(255) COLLATE utf8mb4_unicode_ci NOT NULL,
+  `description` text COLLATE utf8mb4_unicode_ci NOT NULL,
+  `category_id` int(11) DEFAULT NULL,
+  `subcategory_id` int(11) DEFAULT NULL,
+  `priority` enum('low','medium','high','urgent','critical') COLLATE utf8mb4_unicode_ci NOT NULL DEFAULT 'medium',
+  `status` enum('new','assigned','in_progress','pending_user','resolved','closed') COLLATE utf8mb4_unicode_ci NOT NULL DEFAULT 'new',
+  `custom_fields` longtext CHARACTER SET utf8mb4 COLLATE utf8mb4_bin DEFAULT NULL CHECK (json_valid(`custom_fields`)),
+  `requestor_user_id` int(11) DEFAULT NULL,
+  `encoded_by_user_id` int(11) DEFAULT NULL,
+  `requestor_name` varchar(150) COLLATE utf8mb4_unicode_ci NOT NULL,
+  `requestor_email` varchar(150) COLLATE utf8mb4_unicode_ci NOT NULL,
+  `requestor_id_number` varchar(50) COLLATE utf8mb4_unicode_ci DEFAULT NULL,
+  `requestor_department` varchar(150) COLLATE utf8mb4_unicode_ci DEFAULT NULL,
+  `location_office` varchar(150) COLLATE utf8mb4_unicode_ci DEFAULT NULL,
+  `assigned_team_id` int(11) DEFAULT NULL,
+  `assigned_technician_id` int(11) DEFAULT NULL,
+  `resolution_notes` text COLLATE utf8mb4_unicode_ci DEFAULT NULL,
+  `resolution_date` datetime DEFAULT NULL,
+  `sla_due_response` datetime DEFAULT NULL,
+  `sla_due_resolution` datetime DEFAULT NULL,
+  `sla_responded_at` datetime DEFAULT NULL,
+  `sla_resolved_at` datetime DEFAULT NULL,
+  `rating` int(11) DEFAULT NULL,
+  `rating_feedback` text COLLATE utf8mb4_unicode_ci DEFAULT NULL,
+  `closed_at` datetime DEFAULT NULL,
+  `auto_close_at` datetime DEFAULT NULL,
+  `created_at` timestamp NOT NULL DEFAULT current_timestamp(),
+  `updated_at` timestamp NOT NULL DEFAULT current_timestamp() ON UPDATE current_timestamp(),
+  `guest_token_hash` char(64) COLLATE utf8mb4_unicode_ci DEFAULT NULL,
+  PRIMARY KEY (`id`),
+  UNIQUE KEY `ticket_number` (`ticket_number`),
+  UNIQUE KEY `tracking_code` (`tracking_code`),
+  UNIQUE KEY `guest_token_hash` (`guest_token_hash`),
+  KEY `category_id` (`category_id`),
+  KEY `subcategory_id` (`subcategory_id`),
+  KEY `requestor_user_id` (`requestor_user_id`),
+  KEY `idx_tickets_encoded_by` (`encoded_by_user_id`),
+  KEY `assigned_team_id` (`assigned_team_id`),
+  KEY `idx_ticket_number` (`ticket_number`),
+  KEY `idx_status` (`status`),
+  KEY `idx_priority` (`priority`),
+  KEY `idx_assigned_tech` (`assigned_technician_id`),
+  KEY `idx_requestor_email` (`requestor_email`),
+  CONSTRAINT `tickets_ibfk_1` FOREIGN KEY (`category_id`) REFERENCES `categories` (`id`) ON DELETE SET NULL,
+  CONSTRAINT `tickets_ibfk_2` FOREIGN KEY (`subcategory_id`) REFERENCES `subcategories` (`id`) ON DELETE SET NULL,
+  CONSTRAINT `tickets_ibfk_3` FOREIGN KEY (`requestor_user_id`) REFERENCES `users` (`id`) ON DELETE SET NULL,
+  CONSTRAINT `tickets_ibfk_4` FOREIGN KEY (`assigned_team_id`) REFERENCES `teams` (`id`) ON DELETE SET NULL,
+  CONSTRAINT `tickets_ibfk_5` FOREIGN KEY (`assigned_technician_id`) REFERENCES `users` (`id`) ON DELETE SET NULL
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+/*!40101 SET character_set_client = @saved_cs_client */;
+DROP TABLE IF EXISTS `users`;
+/*!40101 SET @saved_cs_client     = @@character_set_client */;
+/*!50503 SET character_set_client = utf8mb4 */;
+CREATE TABLE `users` (
+  `id` int(11) NOT NULL AUTO_INCREMENT,
+  `google_id` varchar(255) COLLATE utf8mb4_unicode_ci DEFAULT NULL,
+  `email` varchar(150) COLLATE utf8mb4_unicode_ci NOT NULL,
+  `password_hash` varchar(255) COLLATE utf8mb4_unicode_ci DEFAULT NULL,
+  `full_name` varchar(150) COLLATE utf8mb4_unicode_ci NOT NULL,
+  `last_name` varchar(100) COLLATE utf8mb4_unicode_ci DEFAULT NULL,
+  `first_name` varchar(100) COLLATE utf8mb4_unicode_ci DEFAULT NULL,
+  `middle_name` varchar(100) COLLATE utf8mb4_unicode_ci DEFAULT NULL,
+  `id_number` varchar(50) COLLATE utf8mb4_unicode_ci DEFAULT NULL,
+  `role` enum('admin','team_leader','technician','encoder','requestor') COLLATE utf8mb4_unicode_ci NOT NULL DEFAULT 'requestor',
+  `team_id` int(11) DEFAULT NULL,
+  `avatar_url` varchar(255) COLLATE utf8mb4_unicode_ci DEFAULT NULL,
+  `is_active` tinyint(1) NOT NULL DEFAULT 1,
+  `created_at` timestamp NOT NULL DEFAULT current_timestamp(),
+  `updated_at` timestamp NOT NULL DEFAULT current_timestamp() ON UPDATE current_timestamp(),
+  PRIMARY KEY (`id`),
+  UNIQUE KEY `email` (`email`),
+  UNIQUE KEY `google_id` (`google_id`),
+  KEY `team_id` (`team_id`),
+  CONSTRAINT `users_ibfk_2` FOREIGN KEY (`team_id`) REFERENCES `teams` (`id`) ON DELETE SET NULL
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+/*!40101 SET character_set_client = @saved_cs_client */;
+DROP TABLE IF EXISTS `asset_maintenance_template_activities`;
+DROP TABLE IF EXISTS `asset_maintenance_templates`;
+DROP TABLE IF EXISTS `asset_maintenance_activities`;
+DROP TABLE IF EXISTS `asset_maintenance_logs`;
+DROP TABLE IF EXISTS `assets`;
+DROP TABLE IF EXISTS `asset_categories`;
+CREATE TABLE `asset_categories` (
+  `id` int(11) NOT NULL AUTO_INCREMENT,
+  `name` varchar(100) COLLATE utf8mb4_unicode_ci NOT NULL,
+  `is_active` tinyint(1) NOT NULL DEFAULT 1,
+  `created_at` timestamp NOT NULL DEFAULT current_timestamp(),
+  PRIMARY KEY (`id`),
+  UNIQUE KEY `uq_asset_categories_name` (`name`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+INSERT INTO `asset_categories` (`name`) VALUES ('Other'), ('Computer');
+CREATE TABLE `asset_maintenance_templates` (
+  `id` int(11) NOT NULL AUTO_INCREMENT,
+  `name` varchar(150) COLLATE utf8mb4_unicode_ci NOT NULL,
+  `category_id` int(11) DEFAULT NULL,
+  `description` varchar(500) COLLATE utf8mb4_unicode_ci DEFAULT NULL,
+  `is_active` tinyint(1) NOT NULL DEFAULT 1,
+  `created_by_user_id` int(11) DEFAULT NULL,
+  `created_at` timestamp NOT NULL DEFAULT current_timestamp(),
+  `updated_at` timestamp NOT NULL DEFAULT current_timestamp() ON UPDATE current_timestamp(),
+  PRIMARY KEY (`id`),
+  UNIQUE KEY `uq_asset_maintenance_template_name` (`name`),
+  KEY `idx_asset_maintenance_template_category` (`category_id`),
+  CONSTRAINT `fk_asset_maintenance_template_category` FOREIGN KEY (`category_id`) REFERENCES `asset_categories` (`id`) ON DELETE SET NULL,
+  CONSTRAINT `fk_asset_maintenance_template_created_by` FOREIGN KEY (`created_by_user_id`) REFERENCES `users` (`id`) ON DELETE SET NULL
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+CREATE TABLE `asset_maintenance_template_activities` (
+  `id` bigint(20) unsigned NOT NULL AUTO_INCREMENT,
+  `template_id` int(11) NOT NULL,
+  `activity_text` varchar(500) COLLATE utf8mb4_unicode_ci NOT NULL,
+  `display_order` int(11) NOT NULL DEFAULT 0,
+  PRIMARY KEY (`id`),
+  KEY `idx_asset_maintenance_template_activity` (`template_id`,`display_order`),
+  CONSTRAINT `fk_asset_maintenance_template_activity_template` FOREIGN KEY (`template_id`) REFERENCES `asset_maintenance_templates` (`id`) ON DELETE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+INSERT INTO `asset_maintenance_templates` (`name`, `category_id`, `description`) VALUES
+  ('Standard computer preventive maintenance', (SELECT `id` FROM `asset_categories` WHERE `name` = 'Computer' LIMIT 1), 'Default annual checklist for workstations and computers.'),
+  ('Standard NAS preventive maintenance', NULL, NULL),
+  ('Standard Server preventive maintenance', (SELECT `id` FROM `asset_categories` WHERE `name` = 'Other' LIMIT 1), NULL);
+INSERT INTO `asset_maintenance_template_activities` (`template_id`, `activity_text`, `display_order`)
+SELECT `id`, 'Check computer and remove dust and other particles', 0 FROM `asset_maintenance_templates` WHERE `name` = 'Standard computer preventive maintenance'
+UNION ALL SELECT `id`, 'Check display monitor and accessories for defects, replace if defective', 1 FROM `asset_maintenance_templates` WHERE `name` = 'Standard computer preventive maintenance'
+UNION ALL SELECT `id`, 'Check internal hardware components for defects, replace if defective', 2 FROM `asset_maintenance_templates` WHERE `name` = 'Standard computer preventive maintenance'
+UNION ALL SELECT `id`, 'Check external hardware components for defects, replace if defective', 3 FROM `asset_maintenance_templates` WHERE `name` = 'Standard computer preventive maintenance'
+UNION ALL SELECT `id`, 'Check power supply, fans, and cables for defects, replace if defective', 4 FROM `asset_maintenance_templates` WHERE `name` = 'Standard computer preventive maintenance'
+UNION ALL SELECT `id`, 'Check POST and event logs for errors', 5 FROM `asset_maintenance_templates` WHERE `name` = 'Standard computer preventive maintenance'
+UNION ALL SELECT `id`, 'Clear old POST and event logs for baselining', 6 FROM `asset_maintenance_templates` WHERE `name` = 'Standard computer preventive maintenance'
+UNION ALL SELECT `id`, 'Check available disk space', 7 FROM `asset_maintenance_templates` WHERE `name` = 'Standard computer preventive maintenance'
+UNION ALL SELECT `id`, 'Perform disk integrity check', 8 FROM `asset_maintenance_templates` WHERE `name` = 'Standard computer preventive maintenance'
+UNION ALL SELECT `id`, 'Perform disk cleanup (System, old and unused applications)', 9 FROM `asset_maintenance_templates` WHERE `name` = 'Standard computer preventive maintenance'
+UNION ALL SELECT `id`, 'Perform system scanning', 10 FROM `asset_maintenance_templates` WHERE `name` = 'Standard computer preventive maintenance'
+UNION ALL SELECT `id`, 'Perform malware scanning', 11 FROM `asset_maintenance_templates` WHERE `name` = 'Standard computer preventive maintenance'
+UNION ALL SELECT `id`, 'Update operating system and applications', 12 FROM `asset_maintenance_templates` WHERE `name` = 'Standard computer preventive maintenance'
+UNION ALL SELECT `id`, 'Check hardware Acquisition details (5-year replacement policy)', 13 FROM `asset_maintenance_templates` WHERE `name` = 'Standard computer preventive maintenance'
+UNION ALL SELECT `id`, 'Check equipment and remove dust and other particle', 0 FROM `asset_maintenance_templates` WHERE `name` = 'Standard NAS preventive maintenance'
+UNION ALL SELECT `id`, 'Check external hardware components for defects, replace if defective', 1 FROM `asset_maintenance_templates` WHERE `name` = 'Standard NAS preventive maintenance'
+UNION ALL SELECT `id`, 'Check power supply cable, fans, and network cable for defects, replace if defective', 2 FROM `asset_maintenance_templates` WHERE `name` = 'Standard NAS preventive maintenance'
+UNION ALL SELECT `id`, 'Check the available storage space, perform storage cleanup if necessary', 3 FROM `asset_maintenance_templates` WHERE `name` = 'Standard NAS preventive maintenance'
+UNION ALL SELECT `id`, 'Check hardware acquisition details (5-year replacement policy)', 4 FROM `asset_maintenance_templates` WHERE `name` = 'Standard NAS preventive maintenance'
+UNION ALL SELECT `id`, 'Check server and remove dust and other particle', 0 FROM `asset_maintenance_templates` WHERE `name` = 'Standard Server preventive maintenance'
+UNION ALL SELECT `id`, 'Check internal hardware components for defects, replace if defective', 1 FROM `asset_maintenance_templates` WHERE `name` = 'Standard Server preventive maintenance'
+UNION ALL SELECT `id`, 'Check external hardware components for defects, replace if defective', 2 FROM `asset_maintenance_templates` WHERE `name` = 'Standard Server preventive maintenance'
+UNION ALL SELECT `id`, 'check power supply, fans, and cable for defects. replace if necessary', 3 FROM `asset_maintenance_templates` WHERE `name` = 'Standard Server preventive maintenance'
+UNION ALL SELECT `id`, 'Check POST and event logs for errors', 4 FROM `asset_maintenance_templates` WHERE `name` = 'Standard Server preventive maintenance'
+UNION ALL SELECT `id`, 'Clear old POST and event logs for baselining', 5 FROM `asset_maintenance_templates` WHERE `name` = 'Standard Server preventive maintenance'
+UNION ALL SELECT `id`, 'Check the available disk space and perform disk integrity check and clean-up', 6 FROM `asset_maintenance_templates` WHERE `name` = 'Standard Server preventive maintenance'
+UNION ALL SELECT `id`, 'Perform disk clean up (old and unused applications, files, and logs)', 7 FROM `asset_maintenance_templates` WHERE `name` = 'Standard Server preventive maintenance'
+UNION ALL SELECT `id`, 'Perform system and security check for potential vulnerability (system scanning, malware, and others)', 8 FROM `asset_maintenance_templates` WHERE `name` = 'Standard Server preventive maintenance'
+UNION ALL SELECT `id`, 'Perform System, application, and security updates', 9 FROM `asset_maintenance_templates` WHERE `name` = 'Standard Server preventive maintenance'
+UNION ALL SELECT `id`, 'Check service status for errors', 10 FROM `asset_maintenance_templates` WHERE `name` = 'Standard Server preventive maintenance'
+UNION ALL SELECT `id`, 'Check server configurations (http,dns, dhcp, nat forwarding, access rules, cache, etc.)', 11 FROM `asset_maintenance_templates` WHERE `name` = 'Standard Server preventive maintenance'
+UNION ALL SELECT `id`, 'Check hardware acquisition details (5-year replacement policy)', 12 FROM `asset_maintenance_templates` WHERE `name` = 'Standard Server preventive maintenance';
+CREATE TABLE `assets` (
+  `id` int(11) NOT NULL AUTO_INCREMENT,
+  `asset_tag` varchar(100) COLLATE utf8mb4_unicode_ci NOT NULL,
+  `name` varchar(180) COLLATE utf8mb4_unicode_ci NOT NULL,
+  `category` varchar(100) COLLATE utf8mb4_unicode_ci NOT NULL DEFAULT 'Other',
+  `brand` varchar(100) COLLATE utf8mb4_unicode_ci DEFAULT NULL,
+  `model` varchar(100) COLLATE utf8mb4_unicode_ci DEFAULT NULL,
+  `serial_number` varchar(150) COLLATE utf8mb4_unicode_ci DEFAULT NULL,
+  `status` enum('available','assigned','in_maintenance','retired','lost') COLLATE utf8mb4_unicode_ci NOT NULL DEFAULT 'available',
+  `department_id` int(11) DEFAULT NULL,
+  `category_id` int(11) DEFAULT NULL,
+  `location_id` int(11) DEFAULT NULL,
+  `maintenance_template_id` int(11) DEFAULT NULL,
+  `purchase_date` date DEFAULT NULL,
+  `warranty_end` date DEFAULT NULL,
+  `notes` text COLLATE utf8mb4_unicode_ci DEFAULT NULL,
+  `is_active` tinyint(1) NOT NULL DEFAULT 1,
+  `created_by_user_id` int(11) DEFAULT NULL,
+  `created_at` timestamp NOT NULL DEFAULT current_timestamp(),
+  `updated_at` timestamp NOT NULL DEFAULT current_timestamp() ON UPDATE current_timestamp(),
+  PRIMARY KEY (`id`),
+  UNIQUE KEY `uq_assets_asset_tag` (`asset_tag`),
+  UNIQUE KEY `uq_assets_serial_number` (`serial_number`),
+  KEY `idx_assets_status_active` (`status`,`is_active`),
+  KEY `idx_assets_department` (`department_id`),
+  CONSTRAINT `fk_assets_department` FOREIGN KEY (`department_id`) REFERENCES `locations` (`id`) ON DELETE SET NULL,
+  CONSTRAINT `fk_assets_category` FOREIGN KEY (`category_id`) REFERENCES `asset_categories` (`id`) ON DELETE SET NULL,
+  CONSTRAINT `fk_assets_location` FOREIGN KEY (`location_id`) REFERENCES `locations` (`id`) ON DELETE SET NULL,
+  CONSTRAINT `fk_assets_maintenance_template` FOREIGN KEY (`maintenance_template_id`) REFERENCES `asset_maintenance_templates` (`id`) ON DELETE SET NULL,
+  CONSTRAINT `fk_assets_created_by` FOREIGN KEY (`created_by_user_id`) REFERENCES `users` (`id`) ON DELETE SET NULL
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+CREATE TABLE `asset_maintenance_logs` (
+  `id` bigint(20) unsigned NOT NULL AUTO_INCREMENT,
+  `asset_id` int(11) NOT NULL,
+  `maintenance_type` enum('inspection','preventive','repair','upgrade','other') COLLATE utf8mb4_unicode_ci NOT NULL DEFAULT 'inspection',
+  `academic_year` varchar(20) COLLATE utf8mb4_unicode_ci DEFAULT NULL,
+  `maintenance_frequency` enum('monthly','quarterly','semi_annual','annual','as_needed') COLLATE utf8mb4_unicode_ci DEFAULT NULL,
+  `maintenance_template_id` int(11) DEFAULT NULL,
+  `description` text COLLATE utf8mb4_unicode_ci NOT NULL,
+  `performed_at` date NOT NULL,
+  `performed_by_user_id` int(11) DEFAULT NULL,
+  `cost` decimal(12,2) DEFAULT NULL,
+  `next_due_date` date DEFAULT NULL,
+  `created_by_user_id` int(11) DEFAULT NULL,
+  `created_at` timestamp NOT NULL DEFAULT current_timestamp(),
+  PRIMARY KEY (`id`),
+  KEY `idx_asset_maintenance_asset_date` (`asset_id`,`performed_at`),
+  CONSTRAINT `fk_asset_maintenance_asset` FOREIGN KEY (`asset_id`) REFERENCES `assets` (`id`) ON DELETE CASCADE,
+  CONSTRAINT `fk_asset_maintenance_template` FOREIGN KEY (`maintenance_template_id`) REFERENCES `asset_maintenance_templates` (`id`) ON DELETE SET NULL,
+  CONSTRAINT `fk_asset_maintenance_performed_by` FOREIGN KEY (`performed_by_user_id`) REFERENCES `users` (`id`) ON DELETE SET NULL,
+  CONSTRAINT `fk_asset_maintenance_created_by` FOREIGN KEY (`created_by_user_id`) REFERENCES `users` (`id`) ON DELETE SET NULL
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+CREATE TABLE `asset_maintenance_activities` (
+  `id` bigint(20) unsigned NOT NULL AUTO_INCREMENT,
+  `maintenance_log_id` bigint(20) unsigned NOT NULL,
+  `activity_text` varchar(500) COLLATE utf8mb4_unicode_ci NOT NULL,
+  `is_completed` tinyint(1) NOT NULL DEFAULT 0,
+  `remarks` varchar(500) COLLATE utf8mb4_unicode_ci DEFAULT NULL,
+  `display_order` int(11) NOT NULL DEFAULT 0,
+  PRIMARY KEY (`id`),
+  KEY `idx_asset_maintenance_activities_log` (`maintenance_log_id`,`display_order`),
+  CONSTRAINT `fk_asset_maintenance_activity_log` FOREIGN KEY (`maintenance_log_id`) REFERENCES `asset_maintenance_logs` (`id`) ON DELETE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
--- --------------------------------------------------------
--- Dumping data for table `system_settings`
--- --------------------------------------------------------
-INSERT INTO `system_settings` (`setting_key`, `setting_value`, `description`) VALUES
-('auto_close_days', '3', 'Days after resolution before auto-closing'),
-('sla_critical_hours', '4', 'Resolution SLA for Critical incidents'),
-('sla_high_hours', '12', 'Resolution SLA for High priority tickets'),
-('sla_medium_hours', '24', 'Resolution SLA for Medium priority tickets'),
-('sla_low_hours', '72', 'Resolution SLA for Low priority tickets'),
-('school_name', 'Notre Dame of Marbel University', 'Institution name'),
-('mis_contact_email', 'mis@ndmu.edu.ph', 'Official MIS email');
+-- Default configuration data. No user accounts or demo tickets are seeded.
+INSERT INTO `locations` (`name`, `code`, `type`) VALUES
+  ('Management Information Systems (MIS)', 'MIS', 'office'),
+  ('College of Computer Studies', 'CCS', 'college'),
+  ('College of Engineering', 'COE', 'college'),
+  ('College of Business Administration', 'CBA', 'college'),
+  ('College of Education', 'CED', 'college'),
+  ('College of Arts and Sciences', 'CAS', 'college'),
+  ('College of Health Sciences', 'CHS', 'college'),
+  ('Integrated Basic Education Department', 'IBED', 'college'),
+  ('Office of the University President', 'OP', 'office'),
+  ('Office of the Registrar', 'REG', 'office'),
+  ('Finance & Accounting Office', 'FAO', 'office'),
+  ('Human Resource Development Office', 'HRDO', 'office'),
+  ('University Library', 'LIB', 'unit'),
+  ('Physical Plant & General Services', 'PPGS', 'office');
 
-SET FOREIGN_KEY_CHECKS = 1;
-COMMIT;
+-- Locations replace the former Departments administration module. New rooms,
+-- buildings, and offices are added through the Locations page or a submitted
+-- service request.
+
+INSERT INTO `teams` (`name`, `description`) VALUES
+  ('Network & Infrastructure Team', 'Campus Wi-Fi, LAN, fiber backbone, routers, and switches'),
+  ('Systems & Web Applications Team', 'EIS, Schoology LMS, SATP, SMS, and database operations'),
+  ('Hardware & Desktop Support Team', 'Workstations, laptops, printers, scanners, and OS maintenance'),
+  ('User Accounts & Access Support', 'Google Workspace, password resets, role permissions, and onboarding');
+
+-- Service catalog copied from the original NDMU MIS IT Ticketing SQL export.
+-- IDs are deliberate: the catalog is inserted into this fresh setup database before tickets exist.
+INSERT INTO `categories` (`id`, `name`, `description`, `icon`) VALUES
+  (1, 'Accounts & Access', 'Institutional email, Schoology, EIS, SATP, password reset', 'account_circle'),
+  (2, 'Network', 'Wi-Fi, LAN, internet, access points', 'wifi'),
+  (3, 'Hardware & Devices', 'Desktop, laptop, printer, scanner', 'computer'),
+  (4, 'Software & Systems', 'Installation, licensing, application problems, EIS, Schoology', 'code'),
+  (5, 'Multimedia & AV Support', 'Projector, display, AV equipment in auditoriums and classrooms', 'videocam'),
+  (6, 'Server & Infrastructure', 'Server, VM, database, and cloud service issues', 'storage'),
+  (7, 'Printing & Scanning', 'Printer setup, toner replenishment, printing errors', 'print'),
+  (8, 'Data & Academic Reports', 'Reports, exports, data corrections', 'table_chart'),
+  (9, 'Other MIS Assistance', 'General IT and hardware inquiries', 'help_outline');
+
+INSERT INTO `subcategories` (`id`, `category_id`, `name`, `description`, `default_type`, `default_priority`, `form_schema`) VALUES
+  (1, 1, 'Institutional Email Account', 'Provision new @ndmu.edu.ph Google Workspace account', 'service_request', 'medium', '[{\"id\":\"employee_id\",\"label\":\"Employee / Student ID Number\",\"type\":\"text\",\"required\":true,\"placeholder\":\"e.g. EMP-2026-0012 or STU-2024-0089\"},{\"id\":\"full_name\",\"label\":\"Full Legal Name\",\"type\":\"text\",\"required\":true,\"placeholder\":\"First Name, Middle Name, Last Name\"},{\"id\":\"department\",\"label\":\"College / Department / Office\",\"type\":\"text\",\"required\":true},{\"id\":\"backup_email\",\"label\":\"Personal Recovery Email\",\"type\":\"email\",\"required\":true,\"placeholder\":\"name@gmail.com\"}]'),
+  (2, 1, 'Schoology Account Setup', 'Schoology LMS instructor profile and course enrollment', 'service_request', 'medium', '[{\"id\":\"employee_id\",\"label\":\"Employee / Faculty ID\",\"type\":\"text\",\"required\":true},{\"id\":\"full_name\",\"label\":\"Faculty Name\",\"type\":\"text\",\"required\":true},{\"id\":\"college_dept\",\"label\":\"College / Academic Department\",\"type\":\"text\",\"required\":true},{\"id\":\"subjects_handled\",\"label\":\"Subjects / Course Codes Handled\",\"type\":\"textarea\",\"required\":true,\"placeholder\":\"e.g. CS101, IT202, Web Development 1\"},{\"id\":\"institutional_email\",\"label\":\"Institutional Email (@ndmu.edu.ph)\",\"type\":\"email\",\"required\":true}]'),
+  (3, 1, 'EIS Faculty/Student Portal Access', 'Access to EIS Grading, Student, or Department modules', 'service_request', 'medium', '[{\"id\":\"id_number\",\"label\":\"ID Number\",\"type\":\"text\",\"required\":true},{\"id\":\"role_type\",\"label\":\"Portal Type\",\"type\":\"select\",\"options\":[\"Faculty Grading Portal\",\"Student Portal\",\"Registrar / Admin Module\",\"Dean / Dept Head Review\"],\"required\":true},{\"id\":\"department\",\"label\":\"College / Office\",\"type\":\"text\",\"required\":true},{\"id\":\"justification\",\"label\":\"Access Justification / Remarks\",\"type\":\"textarea\",\"required\":false}]'),
+  (4, 1, 'Password Reset Request', 'Reset password for Google Email, Schoology, or EIS', 'service_request', 'high', '[{\"id\":\"account_type\",\"label\":\"System / Account\",\"type\":\"select\",\"options\":[\"Google Institutional Email\",\"Schoology LMS\",\"EIS Portal\",\"Windows Workstation\"],\"required\":true},{\"id\":\"username_email\",\"label\":\"Username or Email Address\",\"type\":\"text\",\"required\":true},{\"id\":\"verification_id\",\"label\":\"University ID Number\",\"type\":\"text\",\"required\":true}]'),
+  (5, 2, 'Campus Wi-Fi Connectivity Issue', 'Troubleshoot NDMU-Student or NDMU-Faculty Wi-Fi issues', 'incident', 'high', '[{\"id\":\"building\",\"label\":\"Building Name\",\"type\":\"select\",\"options\":[\"Main Building\",\"CCS Building\",\"Engineering Building\",\"Gymnasium\",\"Student Center\",\"Library\",\"IBED Complex\",\"Administration Building\"],\"required\":true},{\"id\":\"room_office\",\"label\":\"Room / Floor / Area\",\"type\":\"text\",\"required\":true,\"placeholder\":\"e.g. 2nd Floor Hallway / Room 204\"},{\"id\":\"device_type\",\"label\":\"Device Encountering Issue\",\"type\":\"select\",\"options\":[\"Laptop (Windows/Mac)\",\"Mobile Phone (Android/iOS)\",\"Tablet\",\"Other\"],\"required\":true},{\"id\":\"ssid_network\",\"label\":\"Wi-Fi Network Name (SSID)\",\"type\":\"select\",\"options\":[\"NDMU-Faculty\",\"NDMU-Student\",\"NDMU-Guest\",\"Other\"],\"required\":true},{\"id\":\"error_symptom\",\"label\":\"Symptom\",\"type\":\"select\",\"options\":[\"Cannot connect / Invalid password\",\"Connected but No Internet\",\"Weak Signal / Dropping\",\"Slow speed\"],\"required\":true}]'),
+  (6, 2, 'LAN Cable / Office Wallport Issue', 'Damaged network cable or dead Ethernet wall jack', 'incident', 'medium', '[{\"id\":\"building\",\"label\":\"Building\",\"type\":\"text\",\"required\":true},{\"id\":\"room_office\",\"label\":\"Room / Office\",\"type\":\"text\",\"required\":true},{\"id\":\"port_number\",\"label\":\"Wallport Number (if labeled)\",\"type\":\"text\",\"required\":false},{\"id\":\"description\",\"label\":\"Problem Details\",\"type\":\"textarea\",\"required\":true}]'),
+  (7, 3, 'Desktop PC Malfunction', 'Hardware diagnosis for laboratory or office PC', 'incident', 'medium', '[{\"id\":\"asset_tag\",\"label\":\"Equipment Asset Tag / Serial No.\",\"type\":\"text\",\"required\":false,\"placeholder\":\"e.g. NDMU-PC-2024-045\"},{\"id\":\"location\",\"label\":\"Building & Room\",\"type\":\"text\",\"required\":true},{\"id\":\"symptoms\",\"label\":\"Hardware Symptom\",\"type\":\"select\",\"options\":[\"No power / Will not turn on\",\"Beeping / Blue screen\",\"Overheating / Loud fan\",\"Monitor display blank\",\"Keyboard / Mouse unresponsive\"],\"required\":true},{\"id\":\"description\",\"label\":\"Additional Observations\",\"type\":\"textarea\",\"required\":true}]'),
+  (8, 4, 'Software Installation Request', 'Install educational or productivity software', 'service_request', 'low', '[{\"id\":\"software_name\",\"label\":\"Software / Program Requested\",\"type\":\"text\",\"required\":true,\"placeholder\":\"e.g. SPSS, AutoCAD, Visual Studio Code, Zoom\"},{\"id\":\"location_pc\",\"label\":\"Laboratory / Office Computer Location\",\"type\":\"text\",\"required\":true},{\"id\":\"academic_purpose\",\"label\":\"Academic or Office Purpose\",\"type\":\"textarea\",\"required\":true}]'),
+  (9, 5, 'Classroom Projector / Smart TV Setup', 'AV equipment preparation for class lectures or academic events', 'service_request', 'medium', '[{\"id\":\"venue\",\"label\":\"Classroom / Venue\",\"type\":\"text\",\"required\":true,\"placeholder\":\"e.g. CCS Lab 3, Engineering Amphitheater\"},{\"id\":\"date_time\",\"label\":\"Date & Time Needed\",\"type\":\"text\",\"required\":true,\"placeholder\":\"e.g. Monday Sept 8, 8:00 AM - 11:00 AM\"},{\"id\":\"equipment_list\",\"label\":\"Equipment Needed\",\"type\":\"select\",\"options\":[\"LCD Projector & Screen\",\"HDMI / VGA Cable Adapter\",\"Wireless Microphones & Speaker\",\"Full Event Audio-Visual Setup\"],\"required\":true}]');
+
+INSERT INTO `knowledge_base` (`title`, `slug`, `category`, `summary`, `content`, `is_published`) VALUES
+  ('How to Connect to NDMU Campus Wi-Fi (Students & Faculty)', 'how-to-connect-ndmu-wifi', 'Network', 'Instructions for connecting laptops, Android, and iOS devices to NDMU Wi-Fi.', 'Select NDMU-Student or NDMU-Faculty, then sign in with your institutional email and password. Submit a Network ticket if you need assistance.', 1),
+  ('Step-by-Step Guide: Resetting Your Institutional Google Password', 'reset-institutional-google-password', 'Accounts & Access', 'How to recover an @ndmu.edu.ph Google Workspace password.', 'Use Google account recovery first. If recovery is unavailable, submit a Password Reset Request through the service desk.', 1),
+  ('Accessing Schoology LMS for Academic Year 2026-2027', 'accessing-schoology-lms-guide', 'Software & Systems', 'Log in to Schoology with NDMU Google Single Sign-On.', 'Open Schoology, choose Google sign-in, and select your NDMU institutional account. Submit a Schoology Account Setup ticket if courses are missing.', 1);
+
+/*!40103 SET TIME_ZONE=@OLD_TIME_ZONE */;
+
+/*!40101 SET SQL_MODE=@OLD_SQL_MODE */;
+/*!40014 SET FOREIGN_KEY_CHECKS=@OLD_FOREIGN_KEY_CHECKS */;
+/*!40014 SET UNIQUE_CHECKS=@OLD_UNIQUE_CHECKS */;
+/*!40101 SET CHARACTER_SET_CLIENT=@OLD_CHARACTER_SET_CLIENT */;
+/*!40101 SET CHARACTER_SET_RESULTS=@OLD_CHARACTER_SET_RESULTS */;
+/*!40101 SET COLLATION_CONNECTION=@OLD_COLLATION_CONNECTION */;
+/*!40111 SET SQL_NOTES=@OLD_SQL_NOTES */;

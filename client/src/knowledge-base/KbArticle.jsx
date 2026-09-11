@@ -1,6 +1,6 @@
-import React, { useState, useEffect } from 'react';
-import { useParams, Link } from 'react-router-dom';
-import api from '../services/api';
+import React, { useState, useEffect } from "react";
+import { useParams, Link } from "react-router-dom";
+import api from "../services/api";
 
 export default function KbArticle() {
   const { slug } = useParams();
@@ -16,7 +16,7 @@ export default function KbArticle() {
           setArticle(res.data.article);
         }
       } catch (err) {
-        console.error('Failed to load article:', err);
+        console.error("Failed to load article:", err);
       } finally {
         setLoading(false);
       }
@@ -44,7 +44,10 @@ export default function KbArticle() {
     return (
       <div className="max-w-2xl mx-auto px-4 py-16 text-center">
         <h2 className="text-xl font-bold text-slate-800">Article Not Found</h2>
-        <Link to="/kb" className="text-xs font-bold text-ndmu-green-700 hover:underline mt-2 inline-block">
+        <Link
+          to="/kb"
+          className="text-xs font-bold text-ndmu-green-700 hover:underline mt-2 inline-block"
+        >
           Return to Knowledge Base
         </Link>
       </div>
@@ -53,8 +56,12 @@ export default function KbArticle() {
 
   return (
     <div className="max-w-3xl mx-auto px-4 py-8">
-      <Link to="/kb" className="inline-flex items-center gap-1 text-xs font-semibold text-ndmu-green-700 hover:underline mb-4">
-        <span className="material-symbols-outlined text-sm">arrow_back</span> Back to Knowledge Base
+      <Link
+        to="/kb"
+        className="inline-flex items-center gap-1 text-xs font-semibold text-ndmu-green-700 hover:underline mb-4"
+      >
+        <span className="material-symbols-outlined text-sm">arrow_back</span>{" "}
+        Back to Knowledge Base
       </Link>
 
       <div className="bg-white rounded-3xl border border-slate-200 shadow-sm p-6 sm:p-10 space-y-6">
@@ -66,7 +73,11 @@ export default function KbArticle() {
             {article.title}
           </h1>
           <p className="text-xs text-slate-400">
-            Updated on {new Date(article.updated_at || article.created_at).toLocaleDateString()} &bull; {article.views} views
+            Updated on{" "}
+            {new Date(
+              article.updated_at || article.created_at,
+            ).toLocaleDateString()}{" "}
+            &bull; {article.views} views
           </p>
         </div>
 
@@ -77,10 +88,14 @@ export default function KbArticle() {
 
         {/* Helpful Feedback Box */}
         <div className="pt-6 border-t border-slate-100 bg-slate-50 -mx-6 sm:-mx-10 -mb-6 sm:-mb-10 p-6 sm:p-8 rounded-b-3xl text-center">
-          <p className="text-xs font-bold text-slate-700 mb-3">Was this article helpful?</p>
+          <p className="text-xs font-bold text-slate-700 mb-3">
+            Was this article helpful?
+          </p>
           {helpfulGiven ? (
             <span className="text-xs font-bold text-emerald-700 flex items-center justify-center gap-1">
-              <span className="material-symbols-outlined text-sm">check_circle</span>
+              <span className="material-symbols-outlined text-sm">
+                check_circle
+              </span>
               Thank you for your feedback!
             </span>
           ) : (
@@ -89,13 +104,19 @@ export default function KbArticle() {
                 onClick={handleHelpful}
                 className="px-4 py-1.5 bg-white border border-slate-200 hover:border-ndmu-green-500 hover:text-ndmu-green-700 text-slate-700 text-xs font-semibold rounded-lg shadow-sm transition-colors flex items-center gap-1"
               >
-                <span className="material-symbols-outlined text-sm">thumb_up</span> Yes
+                <span className="material-symbols-outlined text-sm">
+                  thumb_up
+                </span>{" "}
+                Yes
               </button>
               <Link
                 to="/submit"
                 className="px-4 py-1.5 bg-white border border-slate-200 hover:border-slate-300 text-slate-700 text-xs font-semibold rounded-lg shadow-sm transition-colors flex items-center gap-1"
               >
-                <span className="material-symbols-outlined text-sm">support_agent</span> Need more help? Submit Ticket
+                <span className="material-symbols-outlined text-sm">
+                  support_agent
+                </span>{" "}
+                Need more help? Submit Ticket
               </Link>
             </div>
           )}
@@ -104,4 +125,3 @@ export default function KbArticle() {
     </div>
   );
 }
-

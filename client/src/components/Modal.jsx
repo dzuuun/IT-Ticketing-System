@@ -1,29 +1,45 @@
-import React, { useEffect } from 'react';
+import React, { useEffect } from "react";
+import { createPortal } from "react-dom";
 
-export default function Modal({ isOpen, onClose, title, children, maxWidth = 'max-w-lg' }) {
+let openModalCount = 0;
+let previousBodyOverflow = "";
+
+export default function Modal({
+  isOpen,
+  onClose,
+  title,
+  children,
+  maxWidth = "max-w-lg",
+  allowOverflow = false,
+}) {
   useEffect(() => {
     const handleKeyDown = (e) => {
-      if (e.key === 'Escape') onClose();
+      if (e.key === "Escape") onClose();
     };
     if (isOpen) {
-      document.body.style.overflow = 'hidden';
-      window.addEventListener('keydown', handleKeyDown);
+      if (openModalCount === 0) previousBodyOverflow = document.body.style.overflow;
+      openModalCount += 1;
+      document.body.style.overflow = "hidden";
+      window.addEventListener("keydown", handleKeyDown);
     }
     return () => {
-      document.body.style.overflow = 'unset';
-      window.removeEventListener('keydown', handleKeyDown);
+      if (isOpen) {
+        openModalCount = Math.max(0, openModalCount - 1);
+        if (openModalCount === 0) document.body.style.overflow = previousBodyOverflow;
+      }
+      window.removeEventListener("keydown", handleKeyDown);
     };
   }, [isOpen, onClose]);
 
   if (!isOpen) return null;
 
-  return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-sm animate-fadeIn">
+  return createPortal(
+    <div className="animate-ndmu-backdrop fixed inset-0 z-[100] flex min-h-dvh items-center justify-center overflow-y-auto bg-slate-900/60 p-4 backdrop-blur-sm">
       <div
-        className={`bg-white rounded-2xl shadow-2xl border border-slate-200 w-full ${maxWidth} overflow-hidden transform transition-all`}
+        className={`animate-ndmu-modal relative my-auto flex w-full max-h-[calc(100dvh-2rem)] flex-col rounded-2xl border border-slate-200 bg-white shadow-2xl ${maxWidth} ${allowOverflow ? "overflow-visible" : "overflow-hidden"}`}
         onClick={(e) => e.stopPropagation()}
       >
-        <div className="flex items-center justify-between px-6 py-4 border-b border-slate-100 bg-slate-50/50">
+        <div className="flex shrink-0 items-center justify-between border-b border-slate-100 bg-slate-50/50 px-6 py-4">
           <h3 className="font-bold text-slate-800 text-base">{title}</h3>
           <button
             onClick={onClose}
@@ -32,9 +48,13 @@ export default function Modal({ isOpen, onClose, title, children, maxWidth = 'ma
             <span className="material-symbols-outlined text-[20px]">close</span>
           </button>
         </div>
-        <div className="p-6 max-h-[80vh] overflow-y-auto">{children}</div>
+        <div
+          className={`min-h-0 flex-1 p-6 ${allowOverflow ? "overflow-visible" : "overflow-y-auto"}`}
+        >
+          {children}
+        </div>
       </div>
-    </div>
+    </div>,
+    document.body,
   );
 }
-

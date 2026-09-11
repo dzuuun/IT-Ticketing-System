@@ -1,101 +1,109 @@
-# NDMU MIS IT Ticketing System
-### Notre Dame of Marbel University — Management Information Systems Service Desk
+# NDMU ICT-MIS Service Desk
 
-A modern, full-stack IT Ticketing & Service Desk application designed specifically for **NDMU MIS Operations**.
+The NDMU ICT-MIS Service Desk is a full-stack ticketing application for
+submitting, triaging, resolving, and tracking technology support requests.
 
----
+## Project structure
 
-## 📁 Project Structure
-
-```
-IT-Ticketing-System/
-├── api/                  # API Controllers, Routes, and Service Modules
-├── auth/                 # Authentication, JWT, and RBAC Middleware
-├── certificates/         # SSL/TLS & HTTPS Configuration Keys
-├── client/               # React (Vite) + Tailwind CSS + Material Icons
-├── db/                   # MySQL Connection Pool & Auto-Migrator
-├── docs/                 # Operational Documentation & Guides
-├── scripts/              # Database Seeder & Auto-Close Worker
-├── uploads/              # Ticket File Attachments & Screenshots
-├── .env                  # Environment Variables
-├── .env.example          # Environment Variables Template
-├── .gitignore            # Git Ignore Configuration
-├── database.sql          # Complete MySQL DDL Schema
-├── index.js              # Express Backend Server Entry
-├── package.json          # Root Scripts & Backend Dependencies
-└── README.md
+```text
+api/             Express routes, controllers, and services
+auth/            JWT authentication and authorization middleware
+client/          React, Vite, and Tailwind user interface
+db/              MySQL access and normalization utilities
+scripts/         Database seeding and scheduled ticket maintenance
+uploads/         Ticket attachments (not committed)
+database.sql     Schema-only MySQL database export
 ```
 
----
+## Requirements
 
-## 🚀 Quick Start Guide
+- Node.js 18 or later
+- MySQL 8 or later
 
-### 1. Requirements
-- **Node.js**: v18+ (tested on Node v24)
-- **MySQL**: 8.0+ running on `localhost:3306` (or configured via `.env`)
+## Local setup
 
-### 2. Setup Environment
-Copy `.env.example` to `.env` (already created by default):
+1. Copy `.env.example` to `.env`.
+2. Set the database connection and distinct JWT secrets in your local `.env`.
+3. Install dependencies:
+
+   ```bash
+   npm install
+   npm install --prefix client
+   ```
+
+4. Start the API and client:
+
+   ```bash
+   npm start
+   npm run client
+   ```
+
+## Testing
+
+Run the server-side automated suite before committing changes:
+
 ```bash
-cp .env.example .env
+npm test
 ```
-Ensure your MySQL database credentials in `.env` match your local environment:
+
+For Node's built-in coverage report, run:
+
+```bash
+npm run test:coverage
+```
+
+The suite protects authentication token separation, role middleware, ticket and
+dashboard access boundaries, and upload validation. Add a regression test with
+every authorization or business-rule fix.
+
+The API runs at `http://localhost:5000` and the Vite client normally runs at
+`http://localhost:5173`.
+
+On the first run, open `/setup` to create the one initial administrator. The
+setup endpoint is permanently unavailable after an account exists.
+
+## Account and secret safety
+
+- The first administrator is created only through `/setup`; no administrator
+  credentials are bundled with the application.
+- Keep `.env`, SMTP credentials, JWT secrets, database passwords, and OAuth
+  secrets out of source control. The repository includes only `.env.example`
+  placeholders.
+- Requestor accounts require an `@ndmu.edu.ph` institutional email address.
+  Guest ticket submission remains available without an account.
+
+## Google Workspace ticket email notifications
+
+Ticket notifications are disabled by default. To enable delivery through the
+ICT-MIS Google Workspace mailbox, add these values to the server's local
+`.env` file:
+
 ```env
-DB_HOST=127.0.0.1
-DB_PORT=3306
-DB_USER=root
-DB_PASSWORD=
-DB_NAME=ndmu_ticketing
+EMAIL_NOTIFICATIONS_ENABLED=true
+SMTP_HOST=smtp.gmail.com
+SMTP_PORT=587
+SMTP_SECURE=false
+SMTP_REQUIRE_TLS=true
+SMTP_USER=mis@ndmu.edu.ph
+SMTP_PASS=YOUR_GOOGLE_APP_PASSWORD
+SMTP_FROM=mis@ndmu.edu.ph
 ```
 
-### 3. Database Initialization & Seeding
-Run the seed script to automatically create database tables, NDMU colleges/departments, operational teams, dynamic service catalog items, knowledge base articles, and demo users:
-```bash
-npm run seed
-```
+Use a Google App Password generated for the mailbox after enabling 2-Step
+Verification. Never use or document the mailbox's normal password. A Google
+Workspace administrator may need to allow App Passwords or provide an approved
+SMTP relay. Restart the API after changing `.env`.
 
-### 4. Running the Application
-You can run the backend and frontend concurrently or in separate terminals:
+The system emails requestors and assigned staff for ticket creation,
+assignment, public replies, status changes, and resolution. Internal notes are
+never sent by email.
 
-**Option A — All-in-One (Root):**
-```bash
-npm start
-```
-and in another terminal:
-```bash
-npm run client
-```
+## Key capabilities
 
-- **Frontend Client**: `http://localhost:5173`
-- **Backend API**: `http://localhost:5000`
-- **API Health Check**: `http://localhost:5000/health`
-
----
-
-## 👥 Default Demo Accounts
-
-| Role | Email | Password | Description |
-| :--- | :--- | :--- | :--- |
-| **Administrator** | `admin@ndmu.edu.ph` | `admin123` | MIS Director (Full access to all configurations & queues) |
-| **Team Leader** | `lead.network@ndmu.edu.ph` | `lead123` | Network Team Lead (Triage & assignments) |
-| **Technician 1** | `tech1@ndmu.edu.ph` | `tech123` | Network Specialist (Resolution & internal notes) |
-| **Technician 2** | `tech2@ndmu.edu.ph` | `tech123` | Hardware & Systems Tech |
-| **Faculty Requestor** | `faculty@ndmu.edu.ph` | `user123` | Prof. Juan Luna (CCS Faculty) |
-| **Student Requestor** | `student@ndmu.edu.ph` | `user123` | Maria Clara (BSIT Student) |
-| **Guest User** | *(No login required)* | — | Submit and track via reference code |
-
----
-
-## 🌟 Key Features
-
-1. **Three Tailored Interfaces**:
-   - **Requestor Portal**: Landing page, dynamic Service Catalog form, My Requests dashboard, ticket timeline, resolution confirmation & star rating.
-   - **MIS Staff Dashboard**: Queues (`New`, `Assigned`, `In Progress`, `Pending Requestor`, `Overdue`), claim tickets, triage modal, public replies vs private internal staff notes.
-   - **Administrator Interface**: Service catalog manager, user roles (RBAC), team allocations, SLA policies, and reports.
-2. **NDMU Dynamic Service Catalog**:
-   - Distinct tailored fields for items (e.g. *Schoology Account* asks for handled subjects and faculty ID; *Wi-Fi Problem* asks for Building, Room, Device type, and SSID).
-3. **Guest Submission & Tracking**:
-   - Users who cannot sign in can submit tickets and track them using their ticket number (e.g. `MIS-2026-000124`) and tracking code.
-4. **SLA Tracking & Auto-Close Engine**:
-   - Priority-based SLA resolution countdowns with visual overdue alerts.
-   - Automated background worker to auto-close resolved tickets after the configured period.
+- Guest and authenticated ticket submission
+- JWT authentication with role-based server authorization
+- Dynamic service catalog and ticket-specific fields
+- Work queues, triage, assignments, resolution, SLA tracking, and history
+- Requestor, technician, team, department, knowledge base, announcement, and
+  system-settings administration
+- XLSX exports and bulk import tools for supported administration modules
