@@ -1,4 +1,5 @@
 const express = require("express");
+const rateLimit = require("express-rate-limit");
 const router = express.Router();
 const ticketController = require("./ticket.controller");
 const {
@@ -8,12 +9,21 @@ const {
 } = require("../../auth/middleware");
 const upload = require("../middleware/upload");
 
+const publicTicketWriteLimit = rateLimit({
+  windowMs: 15 * 60 * 1000,
+  limit: 10,
+  standardHeaders: "draft-8",
+  legacyHeaders: false,
+  skip: (req) => Boolean(req.user),
+});
+
 // Public / Guest routes
 router.post("/guest-track", ticketController.getGuestTicket);
 router.get("/guest/:token", ticketController.getGuestTicketByToken);
 router.post(
   "/guest/:token/replies",
-  upload.array("attachments", 5),
+  publicTicketWriteLimit,
+  upload.ticketAttachments,
   ticketController.postGuestReply,
 );
 
@@ -21,7 +31,8 @@ router.post(
 router.post(
   "/",
   optionalAuthenticate,
-  upload.array("attachments", 5),
+  publicTicketWriteLimit,
+  upload.ticketAttachments,
   ticketController.createTicket,
 );
 
@@ -39,7 +50,7 @@ router.get(
 router.post(
   "/:ticketId/messages",
   authenticate,
-  upload.array("attachments", 5),
+  upload.ticketAttachments,
   ticketController.postMessage,
 );
 

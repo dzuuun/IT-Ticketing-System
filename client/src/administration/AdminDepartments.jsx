@@ -538,9 +538,19 @@ export default function AdminDepartments() {
         {modalDepartment && (
           <ConfirmForm
             onConfirm={saveDepartment}
-            title={modalDepartment.id ? "Save department changes?" : "Add department?"}
-            description={modalDepartment.id ? "Apply changes to this department." : "Add this department to the directory."}
-            confirmLabel={modalDepartment.id ? "Save changes" : "Add department"}
+            title={
+              modalDepartment.id
+                ? "Save department changes?"
+                : "Add department?"
+            }
+            description={
+              modalDepartment.id
+                ? "Apply changes to this department."
+                : "Add this department to the directory."
+            }
+            confirmLabel={
+              modalDepartment.id ? "Save changes" : "Add department"
+            }
             className="space-y-5 text-xs"
           >
             <div className="rounded-xl border border-emerald-100 bg-emerald-50 px-3.5 py-3 text-emerald-900">

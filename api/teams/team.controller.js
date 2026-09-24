@@ -104,13 +104,11 @@ async function addTeamMember(req, res) {
         [teamId, userId, membershipRole],
       );
     }
-    return res
-      .status(201)
-      .json({
-        success: true,
-        added: userIds.length,
-        message: "Team members added.",
-      });
+    return res.status(201).json({
+      success: true,
+      added: userIds.length,
+      message: "Team members added.",
+    });
   } catch (error) {
     console.error("[Add Team Member Error]:", error);
     return res

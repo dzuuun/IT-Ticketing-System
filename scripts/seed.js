@@ -714,14 +714,7 @@ async function runSeed(pool, options = {}) {
         `INSERT INTO users (email, password_hash, full_name, id_number, role, team_id)
        VALUES (?, ?, ?, ?, ?, ?)
        ON DUPLICATE KEY UPDATE full_name=VALUES(full_name), role=VALUES(role), team_id=VALUES(team_id)`,
-        [
-          u.email,
-          u.password_hash,
-          u.full_name,
-          u.id_number,
-          u.role,
-          u.team_id,
-        ],
+        [u.email, u.password_hash, u.full_name, u.id_number, u.role, u.team_id],
       );
     }
     console.log("[Seed] Default users with roles seeded.");

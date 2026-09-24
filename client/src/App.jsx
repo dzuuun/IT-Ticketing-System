@@ -181,7 +181,10 @@ function AppShell() {
                 </AdminRoute>
               }
             />
-            <Route path="/admin/departments" element={<Navigate to="/admin/locations" replace />} />
+            <Route
+              path="/admin/departments"
+              element={<Navigate to="/admin/locations" replace />}
+            />
             <Route
               path="/admin/settings"
               element={

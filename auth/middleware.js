@@ -54,7 +54,7 @@ async function optionalAuthenticate(req, res, next) {
       if (decoded && decoded.userId) {
         const users = await query(
           `SELECT u.id, u.email, u.full_name, u.id_number, u.role
-           FROM users u WHERE u.id = ?`,
+           FROM users u WHERE u.id = ? AND u.is_active = 1`,
           [decoded.userId],
         );
         if (users && users.length > 0) {

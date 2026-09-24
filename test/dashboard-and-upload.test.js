@@ -4,9 +4,18 @@ const { __test: dashboard } = require("../api/dashboard/stats.controller");
 const upload = require("../api/middleware/upload");
 
 test("dashboard ticket scope keeps requestor statistics private, including later account links", () => {
-  const scope = dashboard.ticketScopeFor({ id: 3, email: "requestor@ndmu.edu.ph", role: "requestor" });
+  const scope = dashboard.ticketScopeFor({
+    id: 3,
+    email: "requestor@ndmu.edu.ph",
+    role: "requestor",
+  });
   assert.match(scope.clause, /ticket_requestors/);
-  assert.deepEqual(scope.params, [3, "requestor@ndmu.edu.ph", 3, "requestor@ndmu.edu.ph"]);
+  assert.deepEqual(scope.params, [
+    3,
+    "requestor@ndmu.edu.ph",
+    3,
+    "requestor@ndmu.edu.ph",
+  ]);
 });
 
 test("encoder and technician dashboards receive constrained ticket scopes", () => {
@@ -19,8 +28,32 @@ test("encoder and technician dashboards receive constrained ticket scopes", () =
 });
 
 test("upload policy accepts only matching extension and MIME type", () => {
-  assert.equal(upload.isAllowedUpload({ originalname: "evidence.pdf", mimetype: "application/pdf" }), true);
-  assert.equal(upload.isAllowedUpload({ originalname: "evidence.pdf", mimetype: "image/png" }), false);
-  assert.equal(upload.isAllowedUpload({ originalname: "payload.exe", mimetype: "application/pdf" }), false);
-  assert.equal(upload.isAllowedUpload({ originalname: "screen.png", mimetype: "image/png" }), true);
+  assert.equal(
+    upload.isAllowedUpload({
+      originalname: "evidence.pdf",
+      mimetype: "application/pdf",
+    }),
+    true,
+  );
+  assert.equal(
+    upload.isAllowedUpload({
+      originalname: "evidence.pdf",
+      mimetype: "image/png",
+    }),
+    false,
+  );
+  assert.equal(
+    upload.isAllowedUpload({
+      originalname: "payload.exe",
+      mimetype: "application/pdf",
+    }),
+    false,
+  );
+  assert.equal(
+    upload.isAllowedUpload({
+      originalname: "screen.png",
+      mimetype: "image/png",
+    }),
+    true,
+  );
 });

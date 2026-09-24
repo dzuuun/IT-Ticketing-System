@@ -210,8 +210,14 @@ export default function AdminAnnouncements() {
         {modal && (
           <ConfirmForm
             onConfirm={save}
-            title={modal.id ? "Save announcement changes?" : "Publish announcement?"}
-            description={modal.id ? "Apply these announcement changes now." : "Publish this announcement to the service desk."}
+            title={
+              modal.id ? "Save announcement changes?" : "Publish announcement?"
+            }
+            description={
+              modal.id
+                ? "Apply these announcement changes now."
+                : "Publish this announcement to the service desk."
+            }
             confirmLabel={modal.id ? "Save changes" : "Publish announcement"}
             className="space-y-4 text-xs"
           >

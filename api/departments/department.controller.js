@@ -62,28 +62,22 @@ async function bulkImportDepartments(req, res) {
       req.body.rows,
     );
     if (result.errors.length)
-      return res
-        .status(400)
-        .json({
-          success: false,
-          message: "The spreadsheet contains validation errors.",
-          errors: result.errors,
-        });
-    return res
-      .status(201)
-      .json({
-        success: true,
-        imported: result.imported,
-        message: `${result.imported} units imported successfully.`,
+      return res.status(400).json({
+        success: false,
+        message: "The spreadsheet contains validation errors.",
+        errors: result.errors,
       });
+    return res.status(201).json({
+      success: true,
+      imported: result.imported,
+      message: `${result.imported} units imported successfully.`,
+    });
   } catch (error) {
     console.error("[Bulk Department Import Error]:", error);
-    return res
-      .status(500)
-      .json({
-        success: false,
-        message: "The bulk import could not be completed.",
-      });
+    return res.status(500).json({
+      success: false,
+      message: "The bulk import could not be completed.",
+    });
   }
 }
 

@@ -74,8 +74,10 @@ export default function SubmitTicket() {
     (c) => String(c.id) === String(selectedCategoryId),
   );
   const orderedCategories = [...categories].sort((left, right) => {
-    const isOtherLeft = left.name?.trim().toLowerCase() === "other mis assistance";
-    const isOtherRight = right.name?.trim().toLowerCase() === "other mis assistance";
+    const isOtherLeft =
+      left.name?.trim().toLowerCase() === "other mis assistance";
+    const isOtherRight =
+      right.name?.trim().toLowerCase() === "other mis assistance";
     if (isOtherLeft === isOtherRight) return 0;
     return isOtherLeft ? 1 : -1;
   });
@@ -376,7 +378,12 @@ export default function SubmitTicket() {
                           : department.name,
                       })),
                       ...(!isEncoder
-                        ? [{ value: "Guest / Visitor", label: "Guest / Visitor" }]
+                        ? [
+                            {
+                              value: "Guest / Visitor",
+                              label: "Guest / Visitor",
+                            },
+                          ]
                         : []),
                     ]}
                     placeholder="Search and select a department"
@@ -558,7 +565,9 @@ export default function SubmitTicket() {
                   onCreate={async (name) => {
                     const created = { id: `new-${name}`, name };
                     setLocations((items) =>
-                      [...items, created].sort((a, b) => a.name.localeCompare(b.name)),
+                      [...items, created].sort((a, b) =>
+                        a.name.localeCompare(b.name),
+                      ),
                     );
                     return { value: name };
                   }}

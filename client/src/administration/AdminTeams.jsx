@@ -268,7 +268,11 @@ export default function AdminTeams() {
           <ConfirmForm
             onConfirm={saveTeam}
             title={teamModal.id ? "Save team changes?" : "Create team?"}
-            description={teamModal.id ? "Apply changes to this operational team." : "Create this operational team."}
+            description={
+              teamModal.id
+                ? "Apply changes to this operational team."
+                : "Create this operational team."
+            }
             confirmLabel={teamModal.id ? "Save changes" : "Create team"}
             className="space-y-4 text-xs"
           >

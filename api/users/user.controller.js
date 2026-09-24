@@ -3,6 +3,7 @@ const bcrypt = require("bcryptjs");
 const userImportService = require("./user-import.service");
 const { linkRequestsToAccount } = require("../services/requestorAccountLink");
 const { isInstitutionalEmail } = require("../services/institutionalEmail");
+const { revokeUserTokens } = require("../../auth/refreshTokens");
 
 async function getTechnicians(req, res) {
   try {
@@ -66,6 +67,11 @@ async function createUser(req, res) {
       return res.status(400).json({
         success: false,
         message: "Email, password, first name, and last name are required.",
+      });
+    if (String(password).length < 8)
+      return res.status(400).json({
+        success: false,
+        message: "Password must contain at least 8 characters.",
       });
     if (!validRoles.includes(role))
       return res.status(400).json({ success: false, message: "Invalid role." });
@@ -197,6 +203,11 @@ async function updateUserRole(req, res) {
       );
     }
     if (password) {
+      if (String(password).length < 8)
+        return res.status(400).json({
+          success: false,
+          message: "Password must contain at least 8 characters.",
+        });
       updates.push("password_hash = ?");
       params.push(await bcrypt.hash(password, 12));
     }
@@ -207,6 +218,7 @@ async function updateUserRole(req, res) {
         `UPDATE users SET ${updates.join(", ")} WHERE id = ?`,
         params,
       );
+      if (password) await revokeUserTokens(userId);
     }
 
     return res.json({ success: true, message: "User updated successfully." });

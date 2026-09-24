@@ -34,6 +34,14 @@ async function canUserAccessTicket(user, ticket) {
   return canTechnicianAccessTicket(user, ticket);
 }
 
+function validateResolutionAction(ticket, action) {
+  if (!["confirm", "reopen"].includes(action))
+    return "Action must be 'confirm' or 'reopen'.";
+  if (ticket.status !== "resolved")
+    return "Only a resolved ticket can be confirmed closed or reopened.";
+  return null;
+}
+
 async function downloadAttachmentByFilename(req, res) {
   try {
     const [attachment] = await query(
@@ -45,12 +53,20 @@ async function downloadAttachmentByFilename(req, res) {
       [req.params.filename],
     );
     if (!attachment || !(await canUserAccessTicket(req.user, attachment)))
-      return res.status(404).json({ success: false, message: "Attachment not found." });
-    const filePath = path.join(__dirname, "../../uploads", path.basename(attachment.filename));
+      return res
+        .status(404)
+        .json({ success: false, message: "Attachment not found." });
+    const filePath = path.join(
+      __dirname,
+      "../../uploads",
+      path.basename(attachment.filename),
+    );
     return res.download(filePath, attachment.original_name);
   } catch (error) {
     console.error("[Download Attachment Error]:", error);
-    return res.status(500).json({ success: false, message: "Unable to download attachment." });
+    return res
+      .status(500)
+      .json({ success: false, message: "Unable to download attachment." });
   }
 }
 
@@ -123,9 +139,7 @@ async function createTicket(req, res) {
         ? requestor_id_number
         : user.id_number || requestor_id_number;
     const finalDept =
-      !user || isEncoder
-        ? requestor_department
-        : requestor_department;
+      !user || isEncoder ? requestor_department : requestor_department;
 
     if (!finalName?.trim() || !finalEmail?.trim()) {
       return res.status(400).json({
@@ -608,7 +622,8 @@ async function getTicketByIdOrNumber(req, res) {
     if (!(await canTechnicianAccessTicket(user, ticket))) {
       return res.status(403).json({
         success: false,
-        message: "You can only view tickets assigned to you or still unassigned.",
+        message:
+          "You can only view tickets assigned to you or still unassigned.",
       });
     }
 
@@ -834,10 +849,9 @@ async function confirmGuestResolution(req, res) {
       return res
         .status(404)
         .json({ success: false, message: "Ticket not found." });
-    if (!["confirm", "reopen"].includes(action))
-      return res
-        .status(400)
-        .json({ success: false, message: "Invalid resolution action." });
+    const resolutionError = validateResolutionAction(ticket, action);
+    if (resolutionError)
+      return res.status(400).json({ success: false, message: resolutionError });
     if (action === "confirm") {
       await query(
         "UPDATE tickets SET status = 'closed', closed_at = NOW(), rating = ?, rating_feedback = ? WHERE id = ?",
@@ -925,7 +939,8 @@ async function triageTicket(req, res) {
     if (!(await canTechnicianAccessTicket(user, ticket))) {
       return res.status(403).json({
         success: false,
-        message: "You can only triage tickets assigned to you or still unassigned.",
+        message:
+          "You can only triage tickets assigned to you or still unassigned.",
       });
     }
     if (
@@ -1105,7 +1120,8 @@ async function triageTicket(req, res) {
             ? ticket.assigned_team_id
             : assigned_team_id,
         status:
-          ticket.status === "new" && (assigned_technician_id || assigned_team_id)
+          ticket.status === "new" &&
+          (assigned_technician_id || assigned_team_id)
             ? "assigned"
             : ticket.status,
         priority: priority || ticket.priority,
@@ -1147,18 +1163,13 @@ async function updateTicketStatus(req, res) {
     const { ticketId } = req.params;
     const { status, note } = req.body;
 
-    const validStatuses = [
-      "new",
-      "assigned",
-      "in_progress",
-      "pending_user",
-      "resolved",
-      "closed",
-    ];
+    const validStatuses = ["new", "assigned", "in_progress", "pending_user"];
     if (!validStatuses.includes(status)) {
-      return res
-        .status(400)
-        .json({ success: false, message: "Invalid ticket status." });
+      return res.status(400).json({
+        success: false,
+        message:
+          "Use the resolution workflow to mark a ticket resolved or closed.",
+      });
     }
 
     const [ticket] = await query("SELECT * FROM tickets WHERE id = ?", [
@@ -1172,18 +1183,13 @@ async function updateTicketStatus(req, res) {
     if (!(await canTechnicianAccessTicket(user, ticket))) {
       return res.status(403).json({
         success: false,
-        message: "You can only update tickets assigned to you or still unassigned.",
+        message:
+          "You can only update tickets assigned to you or still unassigned.",
       });
     }
 
-    const now = new Date();
     const updates = ["status = ?"];
     const params = [status];
-
-    if (status === "closed") {
-      updates.push("closed_at = ?");
-      params.push(now);
-    }
 
     params.push(ticketId);
     await query(
@@ -1278,7 +1284,8 @@ async function postMessage(req, res) {
     if (!(await canTechnicianAccessTicket(user, ticket))) {
       return res.status(403).json({
         success: false,
-        message: "You can only reply to tickets assigned to you or still unassigned.",
+        message:
+          "You can only reply to tickets assigned to you or still unassigned.",
       });
     }
 
@@ -1402,7 +1409,8 @@ async function resolveTicket(req, res) {
     if (!(await canTechnicianAccessTicket(user, ticket))) {
       return res.status(403).json({
         success: false,
-        message: "You can only resolve tickets assigned to you or still unassigned.",
+        message:
+          "You can only resolve tickets assigned to you or still unassigned.",
       });
     }
 
@@ -1509,6 +1517,10 @@ async function confirmResolution(req, res) {
       });
     }
 
+    const resolutionError = validateResolutionAction(ticket, action);
+    if (resolutionError)
+      return res.status(400).json({ success: false, message: resolutionError });
+
     const now = new Date();
     const actorName = user ? user.full_name : ticket.requestor_name;
 
@@ -1606,6 +1618,10 @@ module.exports = {
   postMessage,
   resolveTicket,
   confirmResolution,
-  __test: { canTechnicianAccessTicket, ticketLookupForIdentifier },
+  __test: {
+    canTechnicianAccessTicket,
+    ticketLookupForIdentifier,
+    validateResolutionAction,
+  },
   downloadAttachmentByFilename,
 };

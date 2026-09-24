@@ -33,6 +33,28 @@ export default function DynamicFormFields({ schema, values, onChange }) {
         {schema.map((field) => {
           const val = values[field.id] || "";
 
+          if (field.type === "info") {
+            return (
+              <div
+                key={field.id}
+                role="note"
+                className="md:col-span-2 flex gap-3 rounded-xl border border-blue-200 bg-blue-50 px-4 py-3 text-blue-950"
+              >
+                <span className="material-symbols-outlined mt-0.5 text-xl text-blue-700">
+                  info
+                </span>
+                <div>
+                  <p className="text-sm font-bold">{field.label}</p>
+                  {field.placeholder && (
+                    <p className="mt-1 text-xs leading-5 text-blue-900/80">
+                      {field.placeholder}
+                    </p>
+                  )}
+                </div>
+              </div>
+            );
+          }
+
           if (field.type === "select") {
             return (
               <div
@@ -46,7 +68,9 @@ export default function DynamicFormFields({ schema, values, onChange }) {
                 <SearchableSelect
                   required={field.required}
                   value={val}
-                  onChange={(nextValue) => handleFieldChange(field.id, nextValue)}
+                  onChange={(nextValue) =>
+                    handleFieldChange(field.id, nextValue)
+                  }
                   options={field.options || []}
                   placeholder="Search and select an option"
                 />

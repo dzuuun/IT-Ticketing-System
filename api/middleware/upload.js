@@ -57,6 +57,32 @@ const upload = multer({
   fileFilter: fileFilter,
 });
 
+const cleanupUploadedFiles = (files = []) =>
+  Promise.all(
+    files.map((file) =>
+      fs.promises.unlink(file.path).catch((error) => {
+        if (error.code !== "ENOENT")
+          console.error("[Upload Cleanup Error]:", error.message);
+      }),
+    ),
+  );
+
+function ticketAttachments(req, res, next) {
+  upload.array("attachments", 5)(req, res, (error) => {
+    if (error) {
+      cleanupUploadedFiles(req.files).finally(() => next(error));
+      return;
+    }
+
+    res.once("finish", () => {
+      if (res.statusCode >= 400) cleanupUploadedFiles(req.files);
+    });
+    next();
+  });
+}
+
 upload.isAllowedUpload = isAllowedUpload;
+upload.ticketAttachments = ticketAttachments;
+upload.cleanupUploadedFiles = cleanupUploadedFiles;
 
 module.exports = upload;

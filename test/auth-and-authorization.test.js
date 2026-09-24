@@ -4,8 +4,14 @@ const assert = require("node:assert/strict");
 process.env.JWT_ACCESS_SECRET = "test-access-secret";
 process.env.JWT_REFRESH_SECRET = "test-refresh-secret";
 
-const { signAccessToken, verifyAccessToken, signRefreshToken, verifyRefreshToken } = require("../auth/jwt");
+const {
+  signAccessToken,
+  verifyAccessToken,
+  signRefreshToken,
+  verifyRefreshToken,
+} = require("../auth/jwt");
 const { requireRole } = require("../auth/middleware");
+const { __test: ticketRules } = require("../api/tickets/ticket.controller");
 
 function response() {
   return {
@@ -52,4 +58,19 @@ test("role middleware permits an authorized admin", () => {
     called = true;
   });
   assert.equal(called, true);
+});
+
+test("requestors can respond only after a ticket is resolved", () => {
+  assert.match(
+    ticketRules.validateResolutionAction({ status: "in_progress" }, "confirm"),
+    /Only a resolved ticket/,
+  );
+  assert.equal(
+    ticketRules.validateResolutionAction({ status: "resolved" }, "confirm"),
+    null,
+  );
+  assert.equal(
+    ticketRules.validateResolutionAction({ status: "resolved" }, "reopen"),
+    null,
+  );
 });

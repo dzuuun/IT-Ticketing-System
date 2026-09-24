@@ -1,4 +1,5 @@
 const express = require("express");
+const rateLimit = require("express-rate-limit");
 const router = express.Router();
 
 const ticketRoutes = require("./tickets/ticket.routes");
@@ -14,6 +15,13 @@ const assetRoutes = require("./assets/asset.routes");
 const ticketController = require("./tickets/ticket.controller");
 const upload = require("./middleware/upload");
 
+const guestTicketWriteLimit = rateLimit({
+  windowMs: 15 * 60 * 1000,
+  limit: 10,
+  standardHeaders: "draft-8",
+  legacyHeaders: false,
+});
+
 router.use("/tickets", ticketRoutes);
 router.use("/categories", categoryRoutes);
 router.use("/departments", departmentRoutes);
@@ -27,7 +35,8 @@ router.use("/assets", assetRoutes);
 router.get("/guest/tickets/:token", ticketController.getGuestTicketByToken);
 router.post(
   "/guest/tickets/:token/replies",
-  upload.array("attachments", 5),
+  guestTicketWriteLimit,
+  upload.ticketAttachments,
   ticketController.postGuestReply,
 );
 router.post(

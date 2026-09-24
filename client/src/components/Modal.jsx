@@ -17,7 +17,8 @@ export default function Modal({
       if (e.key === "Escape") onClose();
     };
     if (isOpen) {
-      if (openModalCount === 0) previousBodyOverflow = document.body.style.overflow;
+      if (openModalCount === 0)
+        previousBodyOverflow = document.body.style.overflow;
       openModalCount += 1;
       document.body.style.overflow = "hidden";
       window.addEventListener("keydown", handleKeyDown);
@@ -25,7 +26,8 @@ export default function Modal({
     return () => {
       if (isOpen) {
         openModalCount = Math.max(0, openModalCount - 1);
-        if (openModalCount === 0) document.body.style.overflow = previousBodyOverflow;
+        if (openModalCount === 0)
+          document.body.style.overflow = previousBodyOverflow;
       }
       window.removeEventListener("keydown", handleKeyDown);
     };

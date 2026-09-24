@@ -432,9 +432,11 @@ export default function StaffAllTickets() {
                         <StatusBadge status={ticket.status} />
                       </td>
                       <td className="whitespace-nowrap px-4 py-3">
-                        {ticket.assigned_technician_name || ticket.assigned_team_name ? (
+                        {ticket.assigned_technician_name ||
+                        ticket.assigned_team_name ? (
                           <span className="font-semibold text-slate-700">
-                            {ticket.assigned_technician_name || ticket.assigned_team_name}
+                            {ticket.assigned_technician_name ||
+                              ticket.assigned_team_name}
                           </span>
                         ) : (
                           <span className="rounded-md bg-rose-50 px-2 py-1 text-[10px] font-black text-rose-600">

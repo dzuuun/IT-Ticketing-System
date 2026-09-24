@@ -193,7 +193,9 @@ export default function AdminCatalog() {
     () =>
       filteredCategories.find(
         (category) => String(category.id) === String(activeCategoryId),
-      ) || filteredCategories[0] || null,
+      ) ||
+      filteredCategories[0] ||
+      null,
     [filteredCategories, activeCategoryId],
   );
 
@@ -398,7 +400,8 @@ export default function AdminCatalog() {
                 aria-label="Service catalog categories"
               >
                 {filteredCategories.map((category) => {
-                  const isActive = String(category.id) === String(activeCategory?.id);
+                  const isActive =
+                    String(category.id) === String(activeCategory?.id);
                   const serviceCount = (category.subcategories || []).length;
                   return (
                     <button
@@ -782,8 +785,8 @@ export default function AdminCatalog() {
             <p className="leading-5">{confirmation?.description}</p>
           </div>
           <p className="text-xs leading-5 text-slate-500">
-            Review the details before continuing. This change is recorded in
-            the service catalog immediately.
+            Review the details before continuing. This change is recorded in the
+            service catalog immediately.
           </p>
           <div className="flex justify-end gap-2 border-t border-slate-100 pt-4">
             <button
@@ -1182,7 +1185,10 @@ function FormFieldBuilder({ fields, onChange }) {
                 <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
                   <div>
                     <label className="mb-1 block font-semibold text-slate-700">
-                      Field label <span className="text-rose-500">*</span>
+                      {field.type === "info"
+                        ? "Information heading"
+                        : "Field label"}{" "}
+                      <span className="text-rose-500">*</span>
                     </label>
                     <input
                       required
@@ -1190,7 +1196,11 @@ function FormFieldBuilder({ fields, onChange }) {
                       onChange={(e) =>
                         updateField(index, { label: e.target.value })
                       }
-                      placeholder="e.g. Device model"
+                      placeholder={
+                        field.type === "info"
+                          ? "e.g. Before you begin"
+                          : "e.g. Device model"
+                      }
                       className="w-full rounded-lg border border-slate-300 px-3 py-2 outline-none focus:border-ndmu-green-600 focus:ring-2 focus:ring-ndmu-green-100"
                     />
                   </div>
@@ -1203,6 +1213,8 @@ function FormFieldBuilder({ fields, onChange }) {
                       onChange={(e) =>
                         updateField(index, {
                           type: e.target.value,
+                          required:
+                            e.target.value === "info" ? false : field.required,
                           options:
                             e.target.value === "select" ? field.options : [],
                         })
@@ -1215,6 +1227,7 @@ function FormFieldBuilder({ fields, onChange }) {
                       <option value="email">Email</option>
                       <option value="number">Number</option>
                       <option value="date">Date</option>
+                      <option value="info">Information message</option>
                     </select>
                   </div>
                   <div>
@@ -1237,14 +1250,20 @@ function FormFieldBuilder({ fields, onChange }) {
                   </div>
                   <div>
                     <label className="mb-1 block font-semibold text-slate-700">
-                      Placeholder / hint
+                      {field.type === "info"
+                        ? "Information message"
+                        : "Placeholder / hint"}
                     </label>
                     <input
                       value={field.placeholder || ""}
                       onChange={(e) =>
                         updateField(index, { placeholder: e.target.value })
                       }
-                      placeholder="Example shown inside the field"
+                      placeholder={
+                        field.type === "info"
+                          ? "Explain what the requestor needs to know."
+                          : "Example shown inside the field"
+                      }
                       className="w-full rounded-lg border border-slate-300 px-3 py-2 outline-none focus:border-ndmu-green-600 focus:ring-2 focus:ring-ndmu-green-100"
                     />
                   </div>
@@ -1267,17 +1286,19 @@ function FormFieldBuilder({ fields, onChange }) {
                     </div>
                   )}
                 </div>
-                <label className="mt-3 flex items-center gap-2 font-semibold text-slate-700">
-                  <input
-                    type="checkbox"
-                    checked={Boolean(field.required)}
-                    onChange={(e) =>
-                      updateField(index, { required: e.target.checked })
-                    }
-                    className="h-4 w-4 rounded border-slate-300 text-ndmu-green-700 focus:ring-ndmu-green-600"
-                  />
-                  Required response
-                </label>
+                {field.type !== "info" && (
+                  <label className="mt-3 flex items-center gap-2 font-semibold text-slate-700">
+                    <input
+                      type="checkbox"
+                      checked={Boolean(field.required)}
+                      onChange={(e) =>
+                        updateField(index, { required: e.target.checked })
+                      }
+                      className="h-4 w-4 rounded border-slate-300 text-ndmu-green-700 focus:ring-ndmu-green-600"
+                    />
+                    Required response
+                  </label>
+                )}
               </div>
             );
           })

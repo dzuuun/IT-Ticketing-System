@@ -1145,7 +1145,11 @@ function AssetForm({
     <ConfirmForm
       onConfirm={onSubmit}
       title={asset.id ? "Save asset changes?" : "Add asset?"}
-      description={asset.id ? "Apply changes to this asset register entry." : "Add this asset to the ICT-MIS inventory."}
+      description={
+        asset.id
+          ? "Apply changes to this asset register entry."
+          : "Add this asset to the ICT-MIS inventory."
+      }
       confirmLabel={asset.id ? "Save changes" : "Add asset"}
       className="space-y-4 text-xs"
     >
@@ -1363,8 +1367,16 @@ function TemplateForm({
       </div>
       <ConfirmForm
         onConfirm={onSubmit}
-        title={template.id ? "Save template changes?" : "Create maintenance template?"}
-        description={template.id ? "Apply changes to this preventive maintenance template." : "Create this reusable preventive maintenance template."}
+        title={
+          template.id
+            ? "Save template changes?"
+            : "Create maintenance template?"
+        }
+        description={
+          template.id
+            ? "Apply changes to this preventive maintenance template."
+            : "Create this reusable preventive maintenance template."
+        }
         confirmLabel={template.id ? "Save changes" : "Create template"}
         className="space-y-4"
       >

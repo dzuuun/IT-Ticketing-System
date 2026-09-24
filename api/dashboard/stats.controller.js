@@ -8,7 +8,10 @@ function ticketScopeFor(user, alias = "t") {
     };
   }
   if (user.role === "encoder") {
-    return { clause: `WHERE ${alias}.encoded_by_user_id = ?`, params: [user.id] };
+    return {
+      clause: `WHERE ${alias}.encoded_by_user_id = ?`,
+      params: [user.id],
+    };
   }
   if (user.role === "technician") {
     return {
@@ -31,9 +34,18 @@ async function getDashboardStats(req, res) {
       `SELECT t.status, COUNT(*) AS count FROM tickets t ${scope.clause} GROUP BY t.status`,
       scope.params,
     );
-    const statusCounts = { total: 0, new: 0, assigned: 0, in_progress: 0, pending_user: 0, resolved: 0, closed: 0 };
+    const statusCounts = {
+      total: 0,
+      new: 0,
+      assigned: 0,
+      in_progress: 0,
+      pending_user: 0,
+      resolved: 0,
+      closed: 0,
+    };
     statusRows.forEach((row) => {
-      if (statusCounts[row.status] !== undefined) statusCounts[row.status] = row.count;
+      if (statusCounts[row.status] !== undefined)
+        statusCounts[row.status] = row.count;
       statusCounts.total += row.count;
     });
 
@@ -45,13 +57,19 @@ async function getDashboardStats(req, res) {
       `SELECT t.priority, COUNT(*) AS count FROM tickets t ${scope.clause} GROUP BY t.priority`,
       scope.params,
     );
-    const categoryFilter = scope.clause ? `AND ${scope.clause.replace(/^WHERE\s+/i, "")}` : "";
+    const categoryFilter = scope.clause
+      ? `AND ${scope.clause.replace(/^WHERE\s+/i, "")}`
+      : "";
     const categoryRows = await query(
       `SELECT c.name, COUNT(t.id) AS count FROM categories c LEFT JOIN tickets t ON t.category_id = c.id ${categoryFilter} GROUP BY c.id, c.name ORDER BY count DESC`,
       scope.params,
     );
 
-    let slaStats = { breachedResolution: 0, breachedResponse: 0, totalResolved: 0 };
+    let slaStats = {
+      breachedResolution: 0,
+      breachedResponse: 0,
+      totalResolved: 0,
+    };
     if (canViewOperations) {
       const [slaRow] = await query(`
         SELECT
@@ -81,10 +99,20 @@ async function getDashboardStats(req, res) {
       `);
     }
 
-    return res.json({ success: true, statusCounts, typeBreakdown: typeRows, priorityBreakdown: priorityRows, categoryBreakdown: categoryRows, slaStats, techWorkload });
+    return res.json({
+      success: true,
+      statusCounts,
+      typeBreakdown: typeRows,
+      priorityBreakdown: priorityRows,
+      categoryBreakdown: categoryRows,
+      slaStats,
+      techWorkload,
+    });
   } catch (error) {
     console.error("[Get Stats Error]:", error);
-    return res.status(500).json({ success: false, message: "Failed to fetch statistics." });
+    return res
+      .status(500)
+      .json({ success: false, message: "Failed to fetch statistics." });
   }
 }
 

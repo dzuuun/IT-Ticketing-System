@@ -230,7 +230,9 @@ async function getManagedLocations(req, res) {
     );
     return res.json({ success: true, locations });
   } catch {
-    return res.status(500).json({ success: false, message: "Unable to load locations." });
+    return res
+      .status(500)
+      .json({ success: false, message: "Unable to load locations." });
   }
 }
 async function createLocation(req, res) {
@@ -269,15 +271,28 @@ async function updateLocation(req, res) {
         .json({ success: false, message: "Location name is required." });
     const result = await query(
       "UPDATE locations SET name = ?, is_active = ? WHERE id = ?",
-      [name, isActive === false || isActive === 0 ? 0 : 1, req.params.locationId],
+      [
+        name,
+        isActive === false || isActive === 0 ? 0 : 1,
+        req.params.locationId,
+      ],
     );
     if (!result.affectedRows)
-      return res.status(404).json({ success: false, message: "Location not found." });
-    return res.json({ success: true, message: "Location updated successfully." });
+      return res
+        .status(404)
+        .json({ success: false, message: "Location not found." });
+    return res.json({
+      success: true,
+      message: "Location updated successfully.",
+    });
   } catch (error) {
     if (error.code === "ER_DUP_ENTRY")
-      return res.status(409).json({ success: false, message: "That location already exists." });
-    return res.status(500).json({ success: false, message: "Unable to update location." });
+      return res
+        .status(409)
+        .json({ success: false, message: "That location already exists." });
+    return res
+      .status(500)
+      .json({ success: false, message: "Unable to update location." });
   }
 }
 

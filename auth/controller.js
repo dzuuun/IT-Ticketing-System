@@ -12,7 +12,7 @@ const {
 } = require("./jwt");
 const {
   storeRefreshToken,
-  useRefreshToken,
+  consumeRefreshToken,
   revokeRefreshToken,
   revokeUserTokens,
 } = require("./refreshTokens");
@@ -51,13 +51,7 @@ async function issueSession(user, req, res) {
 
 async function register(req, res) {
   try {
-    const {
-      email,
-      password,
-      first_name,
-      middle_name,
-      last_name,
-    } = req.body;
+    const { email, password, first_name, middle_name, last_name } = req.body;
     if (!email || !password || !first_name || !last_name)
       return res.status(400).json({
         success: false,
@@ -94,10 +88,9 @@ async function register(req, res) {
       ],
     );
     await linkRequestsToAccount(query, result.insertId, normalizedEmail);
-    const [user] = await query(
-      "SELECT * FROM users WHERE id = ?",
-      [result.insertId],
-    );
+    const [user] = await query("SELECT * FROM users WHERE id = ?", [
+      result.insertId,
+    ]);
     const session = await issueSession(user, req, res);
     return res.status(201).json({
       success: true,
@@ -126,44 +119,31 @@ async function getSetupStatus(req, res) {
 
 async function setup(req, res) {
   try {
-    const {
-      email,
-      password,
-      first_name,
-      middle_name,
-      last_name,
-    } = req.body || {};
+    const { email, password, first_name, middle_name, last_name } =
+      req.body || {};
     if (!email || !password || !first_name || !last_name)
-      return res
-        .status(400)
-        .json({
-          success: false,
-          message: "Email, first name, last name, and password are required.",
-        });
+      return res.status(400).json({
+        success: false,
+        message: "Email, first name, last name, and password are required.",
+      });
     if (String(password).length < 8)
-      return res
-        .status(400)
-        .json({
-          success: false,
-          message: "Password must contain at least 8 characters.",
-        });
+      return res.status(400).json({
+        success: false,
+        message: "Password must contain at least 8 characters.",
+      });
     const normalizedEmail = email.trim().toLowerCase();
     if (!isInstitutionalEmail(normalizedEmail))
-      return res
-        .status(400)
-        .json({
-          success: false,
-          message:
-            "The administrator must use an @ndmu.edu.ph institutional email address.",
-        });
+      return res.status(400).json({
+        success: false,
+        message:
+          "The administrator must use an @ndmu.edu.ph institutional email address.",
+      });
     const [count] = await query("SELECT COUNT(*) AS total FROM users");
     if (count.total > 0)
-      return res
-        .status(409)
-        .json({
-          success: false,
-          message: "Initial setup has already been completed.",
-        });
+      return res.status(409).json({
+        success: false,
+        message: "Initial setup has already been completed.",
+      });
     const fullName = [first_name, middle_name, last_name]
       .filter(Boolean)
       .map((name) => name.trim())
@@ -179,18 +159,15 @@ async function setup(req, res) {
         last_name.trim(),
       ],
     );
-    const [user] = await query(
-      "SELECT * FROM users WHERE id = ?",
-      [result.insertId],
-    );
+    const [user] = await query("SELECT * FROM users WHERE id = ?", [
+      result.insertId,
+    ]);
     const session = await issueSession(user, req, res);
-    return res
-      .status(201)
-      .json({
-        success: true,
-        message: "Initial administrator created successfully.",
-        ...session,
-      });
+    return res.status(201).json({
+      success: true,
+      message: "Initial administrator created successfully.",
+      ...session,
+    });
   } catch (error) {
     console.error("[Initial Setup Error]:", error);
     return res
@@ -206,10 +183,9 @@ async function login(req, res) {
       return res
         .status(400)
         .json({ success: false, message: "Email and password are required." });
-    const [user] = await query(
-      "SELECT * FROM users WHERE email = ?",
-      [email.trim().toLowerCase()],
-    );
+    const [user] = await query("SELECT * FROM users WHERE email = ?", [
+      email.trim().toLowerCase(),
+    ]);
     if (
       !user ||
       !user.password_hash ||
@@ -299,10 +275,9 @@ async function googleCallback(req, res) {
           profile.picture || null,
         ],
       );
-      [user] = await query(
-        "SELECT * FROM users WHERE id = ?",
-        [result.insertId],
-      );
+      [user] = await query("SELECT * FROM users WHERE id = ?", [
+        result.insertId,
+      ]);
     } else
       await query(
         "UPDATE users SET google_id = ?, avatar_url = COALESCE(?, avatar_url) WHERE id = ?",
@@ -329,12 +304,11 @@ async function refresh(req, res) {
         success: false,
         message: "Refresh token is invalid or expired.",
       });
-    const stored = await useRefreshToken(token);
+    const stored = await consumeRefreshToken(token);
     if (!stored)
       return res
         .status(401)
         .json({ success: false, message: "Refresh token is no longer valid." });
-    await revokeRefreshToken(token);
     const session = await issueSession(safeUser(stored), req, res);
     return res.json({ success: true, ...session });
   } catch (error) {

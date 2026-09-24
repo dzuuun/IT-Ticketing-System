@@ -319,7 +319,8 @@ export default function Home() {
             </p>
           </div>
           <p>
-            For critical emergencies, contact ICT Local Ext. 165 or MIS Local Ext. 150.
+            For critical emergencies, contact ICT Local Ext. 165 or MIS Local
+            Ext. 150.
           </p>
         </div>
       </footer>

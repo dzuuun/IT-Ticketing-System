@@ -7,6 +7,7 @@ const ALLOWED_FIELD_TYPES = new Set([
   "date",
   "textarea",
   "select",
+  "info",
 ]);
 
 function normalizeFormSchema(schema) {
@@ -50,7 +51,7 @@ function normalizeFormSchema(schema) {
       placeholder: String(field.placeholder || "")
         .trim()
         .slice(0, 255),
-      required: Boolean(field.required),
+      required: type === "info" ? false : Boolean(field.required),
       options,
     };
   });

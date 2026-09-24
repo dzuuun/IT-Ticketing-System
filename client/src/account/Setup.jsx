@@ -153,7 +153,9 @@ export default function Setup() {
                   type="button"
                   onClick={() => setShowPasswords((visible) => !visible)}
                   className="absolute inset-y-0 right-0 grid w-11 place-items-center rounded-r-xl text-slate-400 hover:text-ndmu-green-700 focus:outline-none focus:ring-2 focus:ring-inset focus:ring-ndmu-green-600"
-                  aria-label={showPasswords ? "Hide passwords" : "Show passwords"}
+                  aria-label={
+                    showPasswords ? "Hide passwords" : "Show passwords"
+                  }
                   aria-pressed={showPasswords}
                 >
                   <span className="material-symbols-outlined text-lg">
