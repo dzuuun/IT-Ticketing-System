@@ -1,52 +1,30 @@
-import React, { useState } from "react";
-import { Link, useNavigate, useLocation } from "react-router-dom";
-import { useAuth } from "../context/AuthContext";
+import React from "react";
+import { Link } from "react-router-dom";
+import { appPath } from "../services/api";
 
 export default function Navbar({ onToggleSidebar, sidebarOpen }) {
-  const { user, logout, isStaff, isAdmin } = useAuth();
-  const navigate = useNavigate();
-  const location = useLocation();
-  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
-
-  const isActive = (path) => location.pathname === path;
-  const inStaffPortal =
-    location.pathname.startsWith("/staff") ||
-    location.pathname.startsWith("/admin") ||
-    (isStaff && location.pathname.startsWith("/tickets/"));
-
   return (
-    <header className="sticky top-0 z-40 bg-ndmu-green-900 text-white shadow-md border-b border-ndmu-green-800">
-      <div
-        className={`${onToggleSidebar ? "max-w-none" : "max-w-7xl mx-auto"} px-4 sm:px-6 lg:px-8`}
-      >
-        <div className="flex items-center justify-between h-16">
-          {/* Brand Logo */}
+    <header className="z-50 shrink-0 border-b border-ndmu-green-800 bg-ndmu-green-900 text-white shadow-md">
+      <div className="flex h-[72px] items-center justify-between px-4 sm:px-6 min-[901px]:h-20 lg:px-8">
           <div className="flex items-center gap-3">
-            {onToggleSidebar && (
-              <button
-                type="button"
-                onClick={onToggleSidebar}
-                aria-label={sidebarOpen ? "Hide sidebar" : "Show sidebar"}
-                title={sidebarOpen ? "Hide sidebar" : "Show sidebar"}
-                aria-expanded={sidebarOpen}
-                className="hidden h-11 w-11 place-items-center rounded-xl border border-emerald-100/60 bg-ndmu-green-800 text-white shadow-sm transition-all duration-200 hover:bg-ndmu-green-700 hover:shadow-md active:scale-95 lg:grid"
-              >
-                <span className="relative block h-4 w-5" aria-hidden="true">
-                  <span
-                    className={`absolute left-0 top-0 h-0.5 w-5 rounded-full bg-current transition-transform duration-300 ease-in-out ${sidebarOpen ? "translate-y-[7px] rotate-45" : ""}`}
-                  />
-                  <span
-                    className={`absolute left-0 top-[7px] h-0.5 w-5 rounded-full bg-current transition-all duration-200 ${sidebarOpen ? "scale-x-0 opacity-0" : "scale-x-100 opacity-100"}`}
-                  />
-                  <span
-                    className={`absolute bottom-0 left-0 h-0.5 w-5 rounded-full bg-current transition-transform duration-300 ease-in-out ${sidebarOpen ? "-translate-y-[7px] -rotate-45" : ""}`}
-                  />
-                </span>
-              </button>
-            )}
-            <Link to="/" className="flex items-center gap-3 group">
+            <button
+              type="button"
+              onClick={onToggleSidebar}
+              aria-label={sidebarOpen ? "Close navigation" : "Open navigation"}
+              title={sidebarOpen ? "Close navigation" : "Open navigation"}
+              aria-expanded={sidebarOpen}
+              aria-controls="app-sidebar"
+              className="grid h-11 w-11 place-items-center rounded-xl border border-emerald-100/60 bg-ndmu-green-800 text-white shadow-sm transition-all duration-200 hover:bg-ndmu-green-700 hover:shadow-md active:scale-95"
+            >
+              <span className="relative block h-4 w-5" aria-hidden="true">
+                <span className={`absolute left-0 top-0 h-0.5 w-5 rounded-full bg-current transition-transform duration-300 ease-in-out ${sidebarOpen ? "translate-y-[7px] rotate-45" : ""}`} />
+                <span className={`absolute left-0 top-[7px] h-0.5 w-5 rounded-full bg-current transition-all duration-200 ${sidebarOpen ? "scale-x-0 opacity-0" : "scale-x-100 opacity-100"}`} />
+                <span className={`absolute bottom-0 left-0 h-0.5 w-5 rounded-full bg-current transition-transform duration-300 ease-in-out ${sidebarOpen ? "-translate-y-[7px] -rotate-45" : ""}`} />
+              </span>
+            </button>
+            <Link to="/" className="group flex items-center gap-3">
               <img
-                src="/images/ndmu-logo.png"
+                src={appPath("/images/ndmu-logo.png")}
                 alt="NDMU seal"
                 className="h-11 w-11 object-contain transition-transform group-hover:scale-105"
               />
@@ -63,167 +41,7 @@ export default function Navbar({ onToggleSidebar, sidebarOpen }) {
               </div>
             </Link>
           </div>
-
-          {/* Desktop Nav Links */}
-          <nav className="hidden">
-            <Link
-              to="/"
-              className={`px-3 py-2 rounded-lg text-xs font-semibold transition-colors ${
-                isActive("/")
-                  ? "bg-ndmu-green-800 text-white"
-                  : "text-emerald-100 hover:bg-ndmu-green-800/60"
-              }`}
-            >
-              Home
-            </Link>
-            <Link
-              to="/submit"
-              className={`px-3 py-2 rounded-lg text-xs font-semibold transition-colors ${
-                isActive("/submit")
-                  ? "bg-ndmu-green-800 text-white"
-                  : "text-emerald-100 hover:bg-ndmu-green-800/60"
-              }`}
-            >
-              Submit Request
-            </Link>
-            <Link
-              to="/track"
-              className={`px-3 py-2 rounded-lg text-xs font-semibold transition-colors ${
-                isActive("/track")
-                  ? "bg-ndmu-green-800 text-white"
-                  : "text-emerald-100 hover:bg-ndmu-green-800/60"
-              }`}
-            >
-              Track Guest Ticket
-            </Link>
-            {user && (
-              <Link
-                to="/my-tickets"
-                className={`px-3 py-2 rounded-lg text-xs font-semibold transition-colors ${
-                  isActive("/my-tickets")
-                    ? "bg-ndmu-green-800 text-white"
-                    : "text-emerald-100 hover:bg-ndmu-green-800/60"
-                }`}
-              >
-                My Requests
-              </Link>
-            )}
-            <Link
-              to="/kb"
-              className={`px-3 py-2 rounded-lg text-xs font-semibold transition-colors ${
-                isActive("/kb")
-                  ? "bg-ndmu-green-800 text-white"
-                  : "text-emerald-100 hover:bg-ndmu-green-800/60"
-              }`}
-            >
-              Knowledge Base
-            </Link>
-          </nav>
-
-          {/* Mobile hamburger */}
-          <div className="md:hidden flex items-center">
-            <button
-              onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
-              className="rounded-lg p-2 text-emerald-100 transition-all duration-200 hover:bg-ndmu-green-800 active:scale-95"
-            >
-              <span className="material-symbols-outlined">
-                {mobileMenuOpen ? "close" : "menu"}
-              </span>
-            </button>
-          </div>
-        </div>
       </div>
-
-      {/* Mobile Menu dropdown */}
-      {mobileMenuOpen && (
-        <div className="animate-ndmu-modal space-y-1 border-t border-ndmu-green-800 bg-ndmu-green-950 px-4 pb-4 pt-2 md:hidden">
-          <Link
-            to="/"
-            onClick={() => setMobileMenuOpen(false)}
-            className="block px-3 py-2 rounded-md text-sm font-medium text-emerald-100 hover:bg-ndmu-green-800"
-          >
-            Home
-          </Link>
-          <Link
-            to="/submit"
-            onClick={() => setMobileMenuOpen(false)}
-            className="block px-3 py-2 rounded-md text-sm font-medium text-emerald-100 hover:bg-ndmu-green-800"
-          >
-            Submit Request
-          </Link>
-          <Link
-            to="/track"
-            onClick={() => setMobileMenuOpen(false)}
-            className="block px-3 py-2 rounded-md text-sm font-medium text-emerald-100 hover:bg-ndmu-green-800"
-          >
-            Track Guest Ticket
-          </Link>
-          {user && (
-            <Link
-              to="/my-tickets"
-              onClick={() => setMobileMenuOpen(false)}
-              className="block px-3 py-2 rounded-md text-sm font-medium text-emerald-100 hover:bg-ndmu-green-800"
-            >
-              My Requests
-            </Link>
-          )}
-          <Link
-            to="/kb"
-            onClick={() => setMobileMenuOpen(false)}
-            className="block px-3 py-2 rounded-md text-sm font-medium text-emerald-100 hover:bg-ndmu-green-800"
-          >
-            Knowledge Base
-          </Link>
-          {isStaff && !inStaffPortal && (
-            <Link
-              to="/staff/dashboard"
-              onClick={() => setMobileMenuOpen(false)}
-              className="block px-3 py-2 rounded-md text-sm font-bold text-ndmu-gold-300 bg-ndmu-green-900"
-            >
-              ICT-MIS Staff Portal
-            </Link>
-          )}
-          <div className="pt-3 border-t border-ndmu-green-800">
-            {user ? (
-              <div className="flex items-center justify-between">
-                <div>
-                  <div className="text-sm font-bold">{user.full_name}</div>
-                  <div className="text-xs text-ndmu-gold-300 capitalize">
-                    {user.role}
-                  </div>
-                </div>
-                <div className="flex items-center gap-2">
-                  <Link
-                    to="/account/password"
-                    onClick={() => setMobileMenuOpen(false)}
-                    className="rounded bg-ndmu-green-800 px-3 py-1 text-xs font-bold text-emerald-50"
-                  >
-                    Password
-                  </Link>
-                  <button
-                    onClick={() => {
-                      logout();
-                      setMobileMenuOpen(false);
-                      navigate("/");
-                    }}
-                    className="rounded bg-rose-600 px-3 py-1 text-xs text-white"
-                  >
-                    Sign Out
-                  </button>
-                </div>
-              </div>
-            ) : (
-              <Link
-                to="/login"
-                onClick={() => setMobileMenuOpen(false)}
-                className="block text-center py-2 bg-ndmu-gold-500 text-slate-900 font-bold rounded-lg text-sm"
-              >
-                Sign In with NDMU Account
-              </Link>
-            )}
-          </div>
-        </div>
-      )}
     </header>
   );
 }

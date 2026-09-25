@@ -19,7 +19,7 @@ import {
   Wrench,
 } from "lucide-react";
 import { useAuth } from "../context/AuthContext";
-import api from "../services/api";
+import api, { appPath } from "../services/api";
 
 const categoryIcons = {
   "Accounts & Access": UserRoundCheck,
@@ -87,13 +87,13 @@ export default function Home() {
             className="relative isolate min-h-[470px] bg-cover bg-center p-7 text-white sm:p-10 lg:p-14"
             style={{
               backgroundImage:
-                "linear-gradient(130deg, rgba(4,59,42,.95), rgba(7,92,59,.72)), url('/images/ndmu-campus.png')",
+                `linear-gradient(130deg, rgba(4,59,42,.95), rgba(7,92,59,.72)), url('${appPath("/images/ndmu-campus.png")}')`,
             }}
           >
             <div className="relative max-w-2xl">
               <div className="flex items-center gap-3">
                 <img
-                  src="/images/ndmu-logo.png"
+                  src={appPath("/images/ndmu-logo.png")}
                   alt="Notre Dame of Marbel University"
                   className="h-14 w-14 object-contain sm:h-16 sm:w-16"
                 />

@@ -1,0 +1,17 @@
+<!--
+  Merge these rules into the existing IIS site's
+  configuration/system.webServer/rewrite/rules element. Place them before any
+  broad catch-all rules. Do not add a <clear /> element.
+-->
+<rule name="NDMU Service Desk canonical application path" stopProcessing="true">
+  <match url="^it-ticketing-system$" />
+  <action type="Redirect" url="/it-ticketing-system/" redirectType="Permanent" />
+</rule>
+<rule name="NDMU Service Desk prefixed reverse proxy" stopProcessing="true">
+  <match url="^it-ticketing-system(?:/(.*))?$" />
+  <action
+    type="Rewrite"
+    url="http://127.0.0.1:5000/{R:1}"
+    appendQueryString="true"
+    logRewrittenUrl="true" />
+</rule>

@@ -27,10 +27,7 @@ morgan.token("manila-date", () => {
 });
 
 morgan.token("client-ip", (req) => {
-  let ip =
-    req.headers["x-forwarded-for"]?.split(",")[0].trim() ||
-    req.socket.remoteAddress ||
-    "";
+  let ip = req.ip || req.socket.remoteAddress || "";
 
   if (ip.startsWith("::ffff:")) {
     ip = ip.substring(7);
@@ -55,6 +52,10 @@ const { verifyEmailTransport } = require("./api/services/emailService");
 
 const app = express();
 const PORT = process.env.PORT || 5000;
+
+// IIS ARR runs on this machine and forwards the original client address.
+// Trust only loopback proxies so a direct client cannot forge forwarded headers.
+app.set("trust proxy", "loopback");
 
 // Middleware
 const clientUrl = process.env.CLIENT_URL || "http://localhost:5173";

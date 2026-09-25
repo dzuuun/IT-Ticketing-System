@@ -1,9 +1,13 @@
 import axios from "axios";
 
+const APP_BASE_PATH = (import.meta.env.BASE_URL || "/").replace(/\/$/, "");
+export const appPath = (path = "/") => `${APP_BASE_PATH}${path}`;
+
 // The refresh token is intentionally HttpOnly and is never exposed to app
 // code. Credentials are needed during development too, where Vite and Express
 // use different localhost ports.
 axios.defaults.withCredentials = true;
+axios.defaults.baseURL = APP_BASE_PATH || undefined;
 
 const TOKEN_KEY = "ndmu_access_token";
 const USER_KEY = "ndmu_user";
@@ -40,7 +44,10 @@ export const clearAccessToken = () => {
   sessionStorage.removeItem(USER_KEY);
 };
 
-const api = axios.create({ baseURL: "/api", withCredentials: true });
+const api = axios.create({
+  baseURL: appPath("/api"),
+  withCredentials: true,
+});
 let refreshRequest = null;
 
 export const refreshAccessToken = async () => {

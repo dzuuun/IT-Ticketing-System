@@ -1,6 +1,7 @@
 import React, { createContext, useContext, useEffect, useState } from "react";
 import axios from "axios";
 import {
+  appPath,
   clearAccessToken,
   getAccessToken,
   getStoredUser,
@@ -76,7 +77,7 @@ export const AuthProvider = ({ children }) => {
     setUser(setupUser);
     return setupUser;
   };
-  const loginWithGoogle = () => window.location.assign("/auth/google");
+  const loginWithGoogle = () => window.location.assign(appPath("/auth/google"));
   const completeGoogleLogin = async (token) => {
     const { data } = await axios.get("/auth/me", {
       headers: { Authorization: `Bearer ${token}` },

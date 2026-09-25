@@ -21,10 +21,20 @@ const cookieName = () =>
   process.env.REFRESH_COOKIE_NAME || "ndmu_refresh_token";
 const refreshDays = () =>
   Number.parseInt(process.env.JWT_REFRESH_DAYS || "7", 10);
+const cookieSecure = () => {
+  if (process.env.COOKIE_SECURE === "true") return true;
+  if (process.env.COOKIE_SECURE === "false") return false;
+  return process.env.NODE_ENV === "production";
+};
+const cookieSameSite = () => {
+  const configured = process.env.COOKIE_SAME_SITE?.toLowerCase();
+  if (["lax", "strict", "none"].includes(configured)) return configured;
+  return cookieSecure() ? "none" : "lax";
+};
 const cookieOptions = () => ({
   httpOnly: true,
-  secure: process.env.NODE_ENV === "production",
-  sameSite: process.env.NODE_ENV === "production" ? "none" : "lax",
+  secure: cookieSecure(),
+  sameSite: cookieSameSite(),
   maxAge: refreshDays() * 86400000,
   path: "/auth",
 });

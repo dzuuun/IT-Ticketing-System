@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo, useState } from "react";
+import React, { useEffect, useMemo, useRef, useState } from "react";
 import { NavLink, useLocation, useNavigate } from "react-router-dom";
 import { useAuth } from "../context/AuthContext";
 import api from "../services/api";
@@ -151,11 +151,12 @@ function SidebarSection({ title, items, counts, user, collapsed = false }) {
   );
 }
 
-export default function AppSidebar({ isOpen }) {
+export default function AppSidebar({ isOpen, onPreviewChange }) {
   const { user, loading, isStaff, isAdmin, isTeamLeader, logout } = useAuth();
   const navigate = useNavigate();
   const [counts, setCounts] = useState({});
   const [isHoverExpanded, setIsHoverExpanded] = useState(false);
+  const previewCloseTimer = useRef(null);
   const expanded = isOpen || isHoverExpanded;
   const verifiedUser = loading ? null : user;
   const canUseStaffPortal = !loading && Boolean(user) && isStaff;
@@ -167,6 +168,21 @@ export default function AppSidebar({ isOpen }) {
     .map((part) => part[0])
     .join("")
     .toUpperCase();
+
+  const preview = (open) => {
+    if (previewCloseTimer.current) {
+      window.clearTimeout(previewCloseTimer.current);
+      previewCloseTimer.current = null;
+    }
+    setIsHoverExpanded(open);
+    onPreviewChange?.(open);
+  };
+
+  const deferPreviewClose = () => {
+    // Allow a pointer-down in main to dismiss the hover preview before its
+    // target can receive the click.
+    previewCloseTimer.current = window.setTimeout(() => preview(false), 250);
+  };
 
   useEffect(() => {
     if (!canUseStaffPortal) {
@@ -203,34 +219,13 @@ export default function AppSidebar({ isOpen }) {
 
   return (
     <aside
+      id="app-sidebar"
       aria-label="Primary navigation"
-      onMouseEnter={() => !isOpen && setIsHoverExpanded(true)}
-      onMouseLeave={() => setIsHoverExpanded(false)}
-      className={`hidden shrink-0 overflow-hidden bg-ndmu-green-950 text-emerald-100 transition-[width] duration-[400ms] ease-[cubic-bezier(0.22,1,0.36,1)] lg:block ${expanded ? "w-72" : "w-20"}`}
+      onMouseEnter={() => !isOpen && preview(true)}
+      onMouseLeave={deferPreviewClose}
+      className={`app-sidebar ${expanded ? "app-sidebar--expanded" : ""}`}
     >
-      <div className="flex h-screen min-h-0 w-full flex-col border-r border-ndmu-green-800">
-        <div
-          className={`flex min-h-20 shrink-0 items-center border-b border-ndmu-green-800 py-4 ${expanded ? "px-5" : "justify-center px-2"}`}
-        >
-          <img
-            src="/images/ndmu-logo.png"
-            alt="NDMU seal"
-            className={`${expanded ? "h-11 w-11" : "h-10 w-10"} shrink-0 rounded-full bg-white object-contain p-0.5`}
-          />
-          <div className={`${expanded ? "ml-3 min-w-0" : "sr-only"}`}>
-            <p className="truncate text-sm font-extrabold uppercase tracking-wide text-white">
-              {canUseStaffPortal
-                ? "ICT-MIS Operations"
-                : "ICT-MIS Service Desk"}
-            </p>
-            <p className="mt-0.5 truncate text-[10px] font-medium uppercase tracking-[0.14em] text-emerald-100/55">
-              {canUseStaffPortal
-                ? `${canAdminister ? "Admin" : user?.role?.replaceAll("_", " ") || "Staff"} Portal`
-                : "Requestor Portal"}
-            </p>
-          </div>
-        </div>
-
+      <div className="flex h-full min-h-0 w-full flex-col border-r border-ndmu-green-800">
         <div
           className={`sidebar-scroll min-h-0 flex-1 overflow-y-auto overscroll-contain py-5 ${expanded ? "space-y-6 px-3" : "space-y-5 px-2"}`}
         >

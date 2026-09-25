@@ -24,6 +24,53 @@
   background: rgba(255, 255, 255, 0.3);
 }
 
+.sidebar-scroll:focus-visible,
+.sidebar-scroll:focus-within {
+  scrollbar-color: rgba(255, 255, 255, 0.42) transparent;
+}
+
+.sidebar-scroll:focus-within::-webkit-scrollbar-thumb {
+  background: rgba(255, 255, 255, 0.42);
+}
+
+/* The rail always reserves space on wide screens. Its expanded form is a
+   fixed overlay, so opening it never moves the page. */
+.app-sidebar {
+  position: fixed;
+  z-index: 40;
+  top: 72px;
+  bottom: 0;
+  left: 0;
+  width: min(300px, calc(100vw - 32px));
+  overflow: hidden;
+  color: #d1fae5;
+  background: #022c22;
+  transform: translateX(-100%);
+  transition:
+    width 400ms cubic-bezier(0.22, 1, 0.36, 1),
+    transform 300ms cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+.app-sidebar--expanded {
+  transform: translateX(0);
+}
+
+@media (min-width: 901px) {
+  .app-sidebar {
+    top: 80px;
+    width: 74px;
+    transform: translateX(0);
+  }
+
+  .app-sidebar--expanded {
+    width: 280px;
+  }
+
+  .main {
+    margin-left: 74px;
+  }
+}
+
 .app-content-scroll {
   scrollbar-gutter: stable;
 }

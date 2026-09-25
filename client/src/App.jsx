@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useCallback, useState } from "react";
 import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 import { AuthProvider, useAuth } from "./context/AuthContext";
 import { ToastProvider } from "./context/ToastContext";
@@ -57,10 +57,13 @@ const AdminRoute = ({ children }) => {
 };
 
 export default function App() {
+  const routerBase =
+    (import.meta.env.BASE_URL || "/").replace(/\/$/, "") || "/";
+
   return (
     <ToastProvider>
       <AuthProvider>
-        <BrowserRouter>
+        <BrowserRouter basename={routerBase}>
           <AppShell />
         </BrowserRouter>
       </AuthProvider>
@@ -69,22 +72,44 @@ export default function App() {
 }
 
 function AppShell() {
-  const [sidebarOpen, setSidebarOpen] = useState(
-    () => localStorage.getItem("ndmu_sidebar_open") !== "false",
-  );
+  const [sidebarOpen, setSidebarOpen] = useState(false);
+  const [sidebarPreviewOpen, setSidebarPreviewOpen] = useState(false);
   const toggleSidebar = () => {
     setSidebarOpen((current) => {
       localStorage.setItem("ndmu_sidebar_open", String(!current));
       return !current;
     });
   };
+  const closeSidebar = useCallback(() => {
+    setSidebarOpen(false);
+    setSidebarPreviewOpen(false);
+    localStorage.setItem("ndmu_sidebar_open", "false");
+  }, []);
+
+  const closeSidebarFromMain = useCallback(
+    (event) => {
+      if (!sidebarOpen && !sidebarPreviewOpen) return;
+
+      // The first main-area click dismisses the drawer instead of activating
+      // the control beneath it.
+      event.preventDefault();
+      event.stopPropagation();
+      closeSidebar();
+    },
+    [closeSidebar, sidebarOpen, sidebarPreviewOpen],
+  );
 
   return (
-    <div className="flex h-screen h-[100dvh] overflow-hidden bg-slate-50 text-slate-800">
-      <AppSidebar isOpen={sidebarOpen} />
-      <div className="flex h-screen min-w-0 flex-1 flex-col overflow-hidden">
-        <Navbar onToggleSidebar={toggleSidebar} sidebarOpen={sidebarOpen} />
-        <div className="app-content-scroll min-h-0 min-w-0 flex-1 overflow-y-auto overscroll-contain">
+    <div className="flex h-screen h-[100dvh] flex-col overflow-hidden bg-slate-50 text-slate-800">
+      <Navbar onToggleSidebar={toggleSidebar} sidebarOpen={sidebarOpen} />
+      <AppSidebar
+        isOpen={sidebarOpen}
+        onPreviewChange={setSidebarPreviewOpen}
+      />
+      <main
+        className="main app-content-scroll min-h-0 min-w-0 flex-1 overflow-y-auto overscroll-contain"
+        onClickCapture={closeSidebarFromMain}
+      >
           <Routes>
             {/* Public & Requestor Routes */}
             <Route path="/" element={<Home />} />
@@ -212,8 +237,7 @@ function AppShell() {
 
             <Route path="*" element={<Navigate to="/" replace />} />
           </Routes>
-        </div>
-      </div>
+      </main>
     </div>
   );
 }
