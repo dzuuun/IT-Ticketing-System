@@ -52,14 +52,42 @@ const { verifyEmailTransport } = require("./api/services/emailService");
 
 const app = express();
 const PORT = process.env.PORT || 5000;
+// IIS removes this prefix before proxying shared-site requests.  Strip it here
+// too so a direct Node binding at /it-ticketing-system/ serves the same build
+// instead of returning index.html for its JavaScript assets.
+const SERVICE_DESK_BASE_PATH = "/it-ticketing-system";
 
 // IIS ARR runs on this machine and forwards the original client address.
 // Trust only loopback proxies so a direct client cannot forge forwarded headers.
 app.set("trust proxy", "loopback");
 
+app.use((req, res, next) => {
+  if (
+    req.url === SERVICE_DESK_BASE_PATH ||
+    req.url.startsWith(`${SERVICE_DESK_BASE_PATH}/`)
+  ) {
+    req.url = req.url.slice(SERVICE_DESK_BASE_PATH.length) || "/";
+  }
+  next();
+});
+
 // Middleware
 const clientUrl = process.env.CLIENT_URL || "http://localhost:5173";
-app.use(helmet({ crossOriginResourcePolicy: false }));
+const usesHttps = clientUrl.toLowerCase().startsWith("https://");
+app.use(
+  helmet({
+    crossOriginResourcePolicy: false,
+    // An HTTP-only intranet binding cannot upgrade its own assets to HTTPS.
+    // Keep HTTPS-only browser security policies enabled automatically once
+    // CLIENT_URL is HTTPS.
+    contentSecurityPolicy: usesHttps
+      ? undefined
+      : { directives: { upgradeInsecureRequests: null } },
+    crossOriginOpenerPolicy: usesHttps ? undefined : false,
+    originAgentCluster: usesHttps ? undefined : false,
+    strictTransportSecurity: usesHttps ? undefined : false,
+  }),
+);
 app.use(cors({ origin: clientUrl, credentials: true }));
 app.use(cookieParser());
 app.use(
