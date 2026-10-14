@@ -5,7 +5,7 @@ const helmet = require("helmet");
 const cookieParser = require("cookie-parser");
 const rateLimit = require("express-rate-limit");
 const path = require("path");
-const dotenv = require("dotenv");
+require("./config/environment");
 
 morgan.token("manila-date", () => {
   const now = new Date();
@@ -39,8 +39,6 @@ morgan.token("client-ip", (req) => {
 
   return ip;
 });
-
-dotenv.config();
 
 const { initDatabase } = require("./db/index");
 const authRoutes = require("./auth/routes");

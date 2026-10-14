@@ -40,6 +40,13 @@ COOKIE_SECURE=false
 COOKIE_SAME_SITE=lax
 ```
 
+The application always resolves `.env` from its own installation directory,
+not PM2's current working directory. Keep the file beside `index.js` and make
+sure the account running PM2 can read it. Host-level `DB_*` environment
+variables intentionally take precedence over the file; remove or update any
+stale PM2/IIS `DB_HOST`, `DB_PORT`, `DB_USER`, `DB_PASSWORD`, or `DB_NAME`
+values before restarting if the file should supply the database connection.
+
 For an HTTPS IIS binding, use `https://SERVER-IP:PORT` for `CLIENT_URL` and
 `GOOGLE_CALLBACK_URL`, remove `COOKIE_SECURE=false`, and leave the cookie
 settings at their production defaults. Update the Google OAuth authorized
