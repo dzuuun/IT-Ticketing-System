@@ -121,6 +121,11 @@ async function createUser(req, res) {
       },
     });
   } catch (error) {
+    if (error.code === "ER_DUP_ENTRY")
+      return res.status(409).json({
+        success: false,
+        message: "An account with this email already exists.",
+      });
     console.error("[Create User Error]:", error);
     return res
       .status(500)
@@ -171,6 +176,18 @@ async function updateUserRole(req, res) {
 
     const updates = [];
     const params = [];
+
+    if (email) {
+      const duplicates = await query(
+        "SELECT id FROM users WHERE email = ? AND id <> ?",
+        [targetEmail, userId],
+      );
+      if (duplicates.length)
+        return res.status(409).json({
+          success: false,
+          message: "An account with this email already exists.",
+        });
+    }
 
     if (role) {
       updates.push("role = ?");
@@ -223,6 +240,11 @@ async function updateUserRole(req, res) {
 
     return res.json({ success: true, message: "User updated successfully." });
   } catch (error) {
+    if (error.code === "ER_DUP_ENTRY")
+      return res.status(409).json({
+        success: false,
+        message: "An account with this email already exists.",
+      });
     return res
       .status(500)
       .json({ success: false, message: "Failed to update user." });

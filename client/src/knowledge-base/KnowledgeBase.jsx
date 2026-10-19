@@ -1,11 +1,11 @@
 import React, { useEffect, useRef, useState } from "react";
-import { Link } from "react-router-dom";
+import { Link, Navigate } from "react-router-dom";
 import { useAuth } from "../context/AuthContext";
 import api from "../services/api";
 import Modal from "../components/Modal";
 import ConfirmForm from "../components/ConfirmForm";
 
-const emptyArticle = { title: "", category: "", summary: "", content: "" };
+const emptyArticle = { title: "", category: "", summary: "", content: "", is_published: true };
 
 const categoryIcon = (category = "") => {
   const value = category.toLowerCase();
@@ -18,7 +18,7 @@ const categoryIcon = (category = "") => {
   return "menu_book";
 };
 
-export default function KnowledgeBase() {
+export default function KnowledgeBase({ manage = false }) {
   const { isAdmin, loading: authLoading } = useAuth();
   const [articles, setArticles] = useState([]);
   const [categories, setCategories] = useState([]);
@@ -31,6 +31,9 @@ export default function KnowledgeBase() {
   const [articleForm, setArticleForm] = useState(emptyArticle);
   const [publishing, setPublishing] = useState(false);
   const [categoryOpen, setCategoryOpen] = useState(false);
+  const [editingId, setEditingId] = useState(null);
+  const [publicationFilter, setPublicationFilter] = useState("all");
+  const [publicationTarget, setPublicationTarget] = useState(null);
   const categoryPickerRef = useRef(null);
 
   useEffect(() => {
@@ -59,14 +62,17 @@ export default function KnowledgeBase() {
   const fetchArticles = async (
     category = selectedCategory,
     search = searchTerm,
+    status = publicationFilter,
   ) => {
+    if (manage && (authLoading || !isAdmin)) return;
     setLoading(true);
     setLoadError("");
     try {
-      const res = await api.get("/kb", {
+      const res = await api.get(manage ? "/kb/manage/articles" : "/kb", {
         params: {
           category: category !== "all" ? category : undefined,
           search: search.trim() || undefined,
+          status: manage ? status : undefined,
         },
       });
       if (res.data.success) {
@@ -82,29 +88,60 @@ export default function KnowledgeBase() {
 
   useEffect(() => {
     const timer = setTimeout(
-      () => fetchArticles(selectedCategory, searchTerm),
+      () => fetchArticles(selectedCategory, searchTerm, publicationFilter),
       250,
     );
     return () => clearTimeout(timer);
-  }, [selectedCategory, searchTerm]);
+  }, [selectedCategory, searchTerm, publicationFilter, manage, isAdmin, authLoading]);
 
   const handlePublish = async (event) => {
     event.preventDefault();
     setPublishing(true);
     try {
-      await api.post("/kb", articleForm);
+      if (editingId) await api.patch(`/kb/${editingId}`, articleForm);
+      else await api.post("/kb", articleForm);
       setArticleForm(emptyArticle);
       setCreateOpen(false);
       setCategoryOpen(false);
       setSelectedCategory("all");
       setSearchTerm("");
-      await fetchArticles("all", "");
+      setPublicationFilter("all");
+      await fetchArticles("all", "", "all");
     } catch (error) {
-      alert(error.response?.data?.message || "Unable to publish the article.");
+      alert(error.response?.data?.message || "Unable to save the article.");
     } finally {
       setPublishing(false);
     }
   };
+
+  const openEditor = (article) => {
+    setEditingId(article?.id || null);
+    setArticleForm(article ? {
+      title: article.title, category: article.category,
+      summary: article.summary || "", content: article.content || "",
+      is_published: Boolean(Number(article.is_published)),
+    } : { ...emptyArticle, is_published: !manage });
+    setCategoryOpen(false);
+    setCreateOpen(true);
+  };
+  const changePublication = async () => {
+    setPublishing(true);
+    try {
+      await api.patch(`/kb/${publicationTarget.id}/publication`, {
+        is_published: !Boolean(Number(publicationTarget.is_published)),
+      });
+      setPublicationTarget(null);
+      await fetchArticles();
+    } catch (error) {
+      alert(error.response?.data?.message || "Unable to change article visibility.");
+    } finally { setPublishing(false); }
+  };
+  const pickerCategories = editingId && articleForm.category &&
+    !catalogCategories.some((category) => category.name === articleForm.category)
+    ? [...catalogCategories, { id: "current", name: articleForm.category }]
+    : catalogCategories;
+
+  if (manage && !authLoading && !isAdmin) return <Navigate to="/kb" replace />;
 
   return (
     <main className="mx-auto w-full max-w-7xl px-4 py-6 sm:px-6 lg:px-8">
@@ -120,17 +157,25 @@ export default function KnowledgeBase() {
               ICT-MIS Help Center
             </div>
             <h1 className="text-3xl font-black tracking-tight sm:text-4xl">
-              Find answers. Solve it faster.
+              {manage ? "Manage knowledge base" : "Find answers. Solve it faster."}
             </h1>
             <p className="mt-3 max-w-xl text-sm leading-6 text-emerald-100/70">
-              Browse campus technology guides, account instructions, and
-              practical troubleshooting steps maintained by ICT-MIS.
+              {manage
+                ? "Create and edit guides, save unpublished articles, and choose what appears in the public knowledge base."
+                : "Browse campus technology guides, account instructions, and practical troubleshooting steps maintained by ICT-MIS."}
             </p>
           </div>
           {!authLoading && isAdmin && (
+            <div className="flex flex-wrap items-center gap-3">
+            <Link
+              to={manage ? "/kb" : "/admin/knowledge-base"}
+              className="rounded-xl border border-emerald-100/40 px-4 py-3 text-xs font-bold hover:bg-white/10"
+            >
+              {manage ? "View public knowledge base" : "Manage articles"}
+            </Link>
             <button
               type="button"
-              onClick={() => setCreateOpen(true)}
+              onClick={() => openEditor(null)}
               className="inline-flex w-fit items-center gap-2 rounded-xl bg-ndmu-gold-400 px-4 py-3 text-xs font-extrabold text-slate-950 shadow-sm transition hover:-translate-y-0.5 hover:bg-ndmu-gold-300 hover:shadow-md"
             >
               <span className="material-symbols-outlined text-lg">
@@ -138,6 +183,7 @@ export default function KnowledgeBase() {
               </span>
               Add knowledge article
             </button>
+            </div>
           )}
         </div>
 
@@ -175,6 +221,18 @@ export default function KnowledgeBase() {
               Knowledge articles
             </h2>
           </div>
+          {manage && (
+            <select
+              aria-label="Publication status"
+              value={publicationFilter}
+              onChange={(event) => setPublicationFilter(event.target.value)}
+              className="rounded-xl border border-slate-300 bg-white px-3 py-2 text-xs"
+            >
+              <option value="all">All statuses</option>
+              <option value="published">Published</option>
+              <option value="unpublished">Unpublished</option>
+            </select>
+          )}
           <div className="flex max-w-full gap-2 overflow-x-auto pb-1 sm:justify-end">
             {["all", ...categories].map((category) => (
               <button
@@ -236,11 +294,38 @@ export default function KnowledgeBase() {
                 onClick={() => {
                   setSearchTerm("");
                   setSelectedCategory("all");
+                  setPublicationFilter("all");
                 }}
                 className="mt-4 text-xs font-bold text-ndmu-green-700 hover:underline"
               >
                 Clear all filters
               </button>
+            </div>
+          ) : manage ? (
+            <div className="divide-y divide-slate-100 overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm">
+              {articles.map((article) => (
+                <article key={article.id} className="flex flex-col gap-4 p-5 sm:flex-row sm:items-center">
+                  <div className="min-w-0 flex-1">
+                    <div className="flex flex-wrap items-center gap-2">
+                      <h3 className="font-bold text-slate-900">{article.title}</h3>
+                      <span className={`rounded-full px-2 py-1 text-[10px] font-bold ${Number(article.is_published) ? "bg-emerald-50 text-emerald-800" : "bg-slate-100 text-slate-600"}`}>
+                        {Number(article.is_published) ? "Published" : "Unpublished"}
+                      </span>
+                    </div>
+                    <p className="mt-1 text-xs text-ndmu-green-700">{article.category}</p>
+                    <p className="mt-2 line-clamp-2 text-xs leading-5 text-slate-500">{article.summary}</p>
+                  </div>
+                  <div className="flex flex-wrap items-center gap-2 text-xs font-bold">
+                    {Number(article.is_published) === 1 && (
+                      <Link to={`/kb/${article.slug}`} className="rounded-lg px-3 py-2 text-slate-600 hover:bg-slate-100">View</Link>
+                    )}
+                    <button type="button" disabled={publishing} onClick={() => openEditor(article)} className="rounded-lg bg-ndmu-green-50 px-3 py-2 text-ndmu-green-800 disabled:opacity-50">Edit</button>
+                    <button type="button" disabled={publishing} onClick={() => setPublicationTarget(article)} className="rounded-lg border border-slate-300 px-3 py-2 text-slate-700 disabled:opacity-50">
+                      {Number(article.is_published) ? "Unpublish" : "Publish"}
+                    </button>
+                  </div>
+                </article>
+              ))}
             </div>
           ) : (
             <div className="grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-3">
@@ -321,19 +406,18 @@ export default function KnowledgeBase() {
       <Modal
         isOpen={createOpen}
         onClose={() => !publishing && setCreateOpen(false)}
-        title="Publish Knowledge Base Article"
+        title={editingId ? "Edit Knowledge Base Article" : "New Knowledge Base Article"}
         maxWidth="max-w-3xl"
       >
         <ConfirmForm
           onConfirm={handlePublish}
-          title="Publish knowledge base article?"
-          description="This article will be visible to users immediately."
-          confirmLabel="Publish article"
+          title={editingId ? "Save article changes?" : "Save knowledge base article?"}
+          description={articleForm.is_published ? "The saved article will be visible in the public knowledge base." : "The saved article will be hidden from the public knowledge base."}
+          confirmLabel="Save article"
           className="space-y-4 text-xs"
         >
           <div className="rounded-xl border border-ndmu-green-200 bg-ndmu-green-50 px-4 py-3 text-ndmu-green-900">
-            <span className="font-bold">Publishing as administrator.</span> The
-            article becomes visible to all users immediately.
+            {articleForm.is_published ? "This article will be published for all users." : "This article will remain unpublished and can be edited here."}
           </div>
           <div>
             <label className="mb-1.5 block font-bold text-slate-700">
@@ -384,8 +468,8 @@ export default function KnowledgeBase() {
             </div>
             {categoryOpen && (
               <div className="absolute z-30 mt-1.5 max-h-52 w-full overflow-y-auto rounded-xl border border-slate-200 bg-white p-1.5 shadow-xl">
-                {catalogCategories.length > 0 ? (
-                  catalogCategories.map((category) => (
+                {pickerCategories.length > 0 ? (
+                  pickerCategories.map((category) => (
                     <button
                       key={category.id}
                       type="button"
@@ -460,6 +544,14 @@ export default function KnowledgeBase() {
               className="w-full rounded-xl border border-slate-300 px-3.5 py-2.5 font-mono text-xs leading-6 outline-none focus:border-ndmu-green-600 focus:ring-4 focus:ring-ndmu-green-100"
             />
           </div>
+          <label className="flex items-center gap-2 rounded-xl bg-slate-50 p-4 font-bold text-slate-700">
+            <input
+              type="checkbox"
+              checked={articleForm.is_published}
+              onChange={(event) => setArticleForm({ ...articleForm, is_published: event.target.checked })}
+            />
+            Published — visible in the public knowledge base
+          </label>
           <div className="flex justify-end gap-2 border-t border-slate-100 pt-4">
             <button
               type="button"
@@ -479,10 +571,27 @@ export default function KnowledgeBase() {
               >
                 {publishing ? "progress_activity" : "publish"}
               </span>
-              {publishing ? "Publishing..." : "Publish article"}
+              {publishing ? "Saving..." : "Save article"}
             </button>
           </div>
         </ConfirmForm>
+      </Modal>
+      <Modal
+        isOpen={Boolean(publicationTarget)}
+        onClose={() => !publishing && setPublicationTarget(null)}
+        title={Number(publicationTarget?.is_published) ? "Unpublish article?" : "Publish article?"}
+      >
+        <p className="text-sm text-slate-700">
+          {Number(publicationTarget?.is_published)
+            ? `Hide “${publicationTarget.title}” from the public knowledge base? You can edit and publish it again later.`
+            : `Make “${publicationTarget?.title}” visible in the public knowledge base?`}
+        </p>
+        <div className="mt-5 flex justify-end gap-3">
+          <button type="button" disabled={publishing} onClick={() => setPublicationTarget(null)} className="rounded-lg bg-slate-100 px-4 py-2 text-xs font-bold">Cancel</button>
+          <button type="button" disabled={publishing} onClick={changePublication} className="rounded-lg bg-ndmu-green-700 px-4 py-2 text-xs font-bold text-white disabled:opacity-50">
+            {publishing ? "Saving..." : Number(publicationTarget?.is_published) ? "Unpublish" : "Publish"}
+          </button>
+        </div>
       </Modal>
     </main>
   );

@@ -46,6 +46,7 @@ const administrationItems = [
     roles: ["admin"],
   },
   { to: "/admin/users", icon: "group", label: "Users", roles: ["admin"] },
+  { to: "/admin/knowledge-base", icon: "edit_document", label: "Knowledge Base", roles: ["admin"] },
   {
     to: "/admin/teams",
     icon: "groups_2",

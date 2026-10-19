@@ -128,7 +128,10 @@ function AppShell() {
             <Route path="/guest/ticket/:token" element={<GuestTrack />} />
             <Route path="/my-tickets" element={<MyTickets />} />
             <Route path="/tickets/:identifier" element={<TicketDetail />} />
-            <Route path="/kb" element={<KnowledgeBase />} />
+            <Route path="/kb" element={<KnowledgeBase key="public-kb" />} />
+            <Route path="/admin/knowledge-base" element={
+              <AdminRoute><KnowledgeBase key="managed-kb" manage /></AdminRoute>
+            } />
             <Route path="/kb/:slug" element={<KbArticle />} />
 
             {/* Distinct Staff Work Queue Routes */}

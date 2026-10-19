@@ -132,6 +132,32 @@ test("an existing account is skipped without preventing new accounts importing",
   assert.equal(state.inserted[0][0], "new@ndmu.edu.ph");
 });
 
+test("identical full names with different emails are imported as separate users", async () => {
+  const state = database();
+  const result = await importUsers([
+    { ...account("maria.one@ndmu.edu.ph"), middle_name: "Santos" },
+    { ...account("maria.two@ndmu.edu.ph"), middle_name: "Santos" },
+  ]);
+  assert.equal(result.imported, 2);
+  assert.equal(result.skipped, 0);
+  assert.deepEqual(result.errors, []);
+  assert.equal(state.inserted[0][2], state.inserted[1][2]);
+  assert.notEqual(state.inserted[0][0], state.inserted[1][0]);
+});
+
+test("different names with the same trimmed case-insensitive email are duplicates", async () => {
+  const state = database();
+  const result = await importUsers([
+    account("maria@ndmu.edu.ph"),
+    { ...account("  MARIA@ndmu.edu.ph  "), first_name: "Juan", last_name: "Santos" },
+  ]);
+  assert.equal(result.imported, 1);
+  assert.equal(result.skipped, 1);
+  assert.equal(result.errors[0].field, "email");
+  assert.equal(result.errors[0].row, 3);
+  assert.equal(state.inserted.length, 1);
+});
+
 test("a database duplicate detected during insert rolls back that row and continues", async () => {
   const state = database();
   const query = connection.query;

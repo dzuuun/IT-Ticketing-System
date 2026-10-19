@@ -737,6 +737,7 @@ export default function AdminUsers() {
                 requestor accounts must use an @ndmu.edu.ph email address.
                 Passwords are optional: leave blank for Google sign-in or set
                 one later. Supplied passwords must contain at least 8 characters.
+                Duplicate checks use email addresses; matching names are allowed.
               </p>
             </div>
             <button

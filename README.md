@@ -131,6 +131,15 @@ The system emails requestors and assigned staff for ticket creation,
 assignment, public replies, status changes, and resolution. Internal notes are
 never sent by email.
 
+## Managing knowledge base articles
+
+Administrators can open **Administration Modules → Knowledge Base**, or select
+**Manage articles** on the public knowledge base page. The management view lists
+published and unpublished articles and provides editing, publishing, and
+unpublishing controls. Unpublished articles stay available for administration
+and are hidden from public search and article links. Editing preserves existing
+links and feedback counts.
+
 ## Key capabilities
 
 - Guest and authenticated ticket submission
