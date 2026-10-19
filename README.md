@@ -111,17 +111,6 @@ Ticket notifications are disabled by default. To enable delivery through the
 ICT-MIS Google Workspace mailbox, add these values to the server's local
 `.env` file:
 
-```env
-EMAIL_NOTIFICATIONS_ENABLED=true
-SMTP_HOST=smtp.gmail.com
-SMTP_PORT=587
-SMTP_SECURE=false
-SMTP_REQUIRE_TLS=true
-SMTP_USER=mis@ndmu.edu.ph
-SMTP_PASS=YOUR_GOOGLE_APP_PASSWORD
-SMTP_FROM=mis@ndmu.edu.ph
-```
-
 Use a Google App Password generated for the mailbox after enabling 2-Step
 Verification. Never use or document the mailbox's normal password. A Google
 Workspace administrator may need to allow App Passwords or provide an approved
