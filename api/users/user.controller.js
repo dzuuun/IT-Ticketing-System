@@ -232,17 +232,20 @@ async function updateUserRole(req, res) {
 async function bulkImportUsers(req, res) {
   try {
     const result = await userImportService.importUsers(req.body.rows);
-    if (result.errors.length) {
+    if (result.imported === undefined) {
       return res.status(400).json({
         success: false,
         message: "The spreadsheet contains validation errors.",
         errors: result.errors,
       });
     }
-    return res.status(201).json({
+    return res.status(result.imported ? 201 : 200).json({
       success: true,
-      message: `${result.imported} user accounts imported successfully.`,
+      message: `${result.imported} user accounts imported. ${result.skipped} rows skipped.`,
       imported: result.imported,
+      skipped: result.skipped,
+      errors: result.errors,
+      skipped_rows: result.skipped_rows,
     });
   } catch (error) {
     console.error("[Bulk User Import Error]:", error);

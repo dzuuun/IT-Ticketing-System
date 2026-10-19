@@ -75,13 +75,19 @@ const usesHttps = clientUrl.toLowerCase().startsWith("https://");
 app.use(
   helmet({
     crossOriginResourcePolicy: false,
+    referrerPolicy: { policy: "strict-origin-when-cross-origin" },
     // An HTTP-only intranet binding cannot upgrade its own assets to HTTPS.
     // Keep HTTPS-only browser security policies enabled automatically once
     // CLIENT_URL is HTTPS.
-    contentSecurityPolicy: usesHttps
-      ? undefined
-      : { directives: { upgradeInsecureRequests: null } },
-    crossOriginOpenerPolicy: usesHttps ? undefined : false,
+    contentSecurityPolicy: {
+      directives: {
+        scriptSrc: ["'self'", "https://accounts.google.com/gsi/client"],
+        frameSrc: ["'self'", "https://accounts.google.com/gsi/"],
+        connectSrc: ["'self'", "https://accounts.google.com/gsi/"],
+        ...(!usesHttps ? { upgradeInsecureRequests: null } : {}),
+      },
+    },
+    crossOriginOpenerPolicy: { policy: "same-origin-allow-popups" },
     originAgentCluster: usesHttps ? undefined : false,
     strictTransportSecurity: usesHttps ? undefined : false,
   }),

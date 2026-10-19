@@ -1,7 +1,6 @@
 import React, { createContext, useContext, useEffect, useState } from "react";
 import axios from "axios";
 import {
-  appPath,
   clearAccessToken,
   getAccessToken,
   getStoredUser,
@@ -77,14 +76,11 @@ export const AuthProvider = ({ children }) => {
     setUser(setupUser);
     return setupUser;
   };
-  const loginWithGoogle = () => window.location.assign(appPath("/auth/google"));
-  const completeGoogleLogin = async (token) => {
-    const { data } = await axios.get("/auth/me", {
-      headers: { Authorization: `Bearer ${token}` },
-    });
-    persistSession({ accessToken: token, user: data.user });
-    setUser(data.user);
-    return data.user;
+  const loginWithGoogle = async (credential) => {
+    const { data } = await axios.post("/auth/google", { credential });
+    const loggedInUser = persistSession(data);
+    setUser(loggedInUser);
+    return loggedInUser;
   };
   const logout = () => {
     // Clear this device immediately, while also invalidating its server-side
@@ -106,7 +102,6 @@ export const AuthProvider = ({ children }) => {
         register,
         completeSetup,
         loginWithGoogle,
-        completeGoogleLogin,
         logout,
         isAdmin,
         isTeamLeader,

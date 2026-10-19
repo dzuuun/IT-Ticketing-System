@@ -34,9 +34,15 @@ export default function SubmitTicket() {
   const [attachments, setAttachments] = useState([]);
 
   // Guest fields
-  const [guestName, setGuestName] = useState("");
+  const [guestFirstName, setGuestFirstName] = useState("");
+  const [guestMiddleName, setGuestMiddleName] = useState("");
+  const [guestLastName, setGuestLastName] = useState("");
   const [guestEmail, setGuestEmail] = useState("");
   const [guestDepartment, setGuestDepartment] = useState("");
+  const guestName = [guestFirstName, guestMiddleName, guestLastName]
+    .map((name) => name.trim())
+    .filter(Boolean)
+    .join(" ");
 
   useEffect(() => {
     const fetchData = async () => {
@@ -312,7 +318,7 @@ export default function SubmitTicket() {
       >
         <div className="min-w-0 space-y-5">
           {(!user || isEncoder) && (
-            <section className="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm">
+            <section className="overflow-visible rounded-2xl border border-slate-200 bg-white shadow-sm">
               <div className="flex items-center gap-3 border-b border-slate-100 px-5 py-4 sm:px-6">
                 <span className="grid h-9 w-9 place-items-center rounded-lg bg-ndmu-green-50 text-ndmu-green-700">
                   <span className="material-symbols-outlined text-xl">
@@ -331,19 +337,58 @@ export default function SubmitTicket() {
                 </div>
               </div>
               <div className="grid grid-cols-1 gap-4 p-5 sm:grid-cols-2 sm:p-6">
-                <div>
-                  <label className="mb-1.5 block text-xs font-bold text-slate-700">
-                    Full name <span className="text-rose-500">*</span>
-                  </label>
-                  <input
-                    type="text"
-                    required
-                    autoComplete="name"
-                    placeholder="e.g. Maria Clara"
-                    value={guestName}
-                    onChange={(e) => setGuestName(e.target.value)}
-                    className="w-full rounded-xl border border-slate-300 bg-white px-3.5 py-2.5 text-sm outline-none transition focus:border-ndmu-green-600 focus:ring-4 focus:ring-ndmu-green-100"
-                  />
+                <div className="grid grid-cols-1 gap-4 sm:col-span-2 sm:grid-cols-3">
+                  <div>
+                    <label htmlFor="requestor-first-name" className="mb-1.5 block text-xs font-bold text-slate-700">
+                      First name <span className="text-rose-500">*</span>
+                    </label>
+                    <input
+                      id="requestor-first-name"
+                      name="first_name"
+                      type="text"
+                      required
+                      pattern=".*\S.*"
+                      title="Enter your first name."
+                      autoComplete="given-name"
+                      placeholder="e.g. Maria"
+                      value={guestFirstName}
+                      onChange={(e) => setGuestFirstName(e.target.value)}
+                      className="w-full rounded-xl border border-slate-300 bg-white px-3.5 py-2.5 text-sm outline-none transition focus:border-ndmu-green-600 focus:ring-4 focus:ring-ndmu-green-100"
+                    />
+                  </div>
+                  <div>
+                    <label htmlFor="requestor-middle-name" className="mb-1.5 block text-xs font-bold text-slate-700">
+                      Middle name <span className="font-normal text-slate-400">(optional)</span>
+                    </label>
+                    <input
+                      id="requestor-middle-name"
+                      name="middle_name"
+                      type="text"
+                      autoComplete="additional-name"
+                      placeholder="e.g. Santos"
+                      value={guestMiddleName}
+                      onChange={(e) => setGuestMiddleName(e.target.value)}
+                      className="w-full rounded-xl border border-slate-300 bg-white px-3.5 py-2.5 text-sm outline-none transition focus:border-ndmu-green-600 focus:ring-4 focus:ring-ndmu-green-100"
+                    />
+                  </div>
+                  <div>
+                    <label htmlFor="requestor-last-name" className="mb-1.5 block text-xs font-bold text-slate-700">
+                      Last name <span className="text-rose-500">*</span>
+                    </label>
+                    <input
+                      id="requestor-last-name"
+                      name="last_name"
+                      type="text"
+                      required
+                      pattern=".*\S.*"
+                      title="Enter your last name."
+                      autoComplete="family-name"
+                      placeholder="e.g. Cruz"
+                      value={guestLastName}
+                      onChange={(e) => setGuestLastName(e.target.value)}
+                      className="w-full rounded-xl border border-slate-300 bg-white px-3.5 py-2.5 text-sm outline-none transition focus:border-ndmu-green-600 focus:ring-4 focus:ring-ndmu-green-100"
+                    />
+                  </div>
                 </div>
                 <div>
                   <label className="mb-1.5 block text-xs font-bold text-slate-700">
@@ -504,7 +549,7 @@ export default function SubmitTicket() {
             />
           )}
 
-          <section className="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm">
+          <section className="overflow-visible rounded-2xl border border-slate-200 bg-white shadow-sm">
             <div className="flex items-center gap-3 border-b border-slate-100 px-5 py-4 sm:px-6">
               <span className="grid h-9 w-9 place-items-center rounded-lg bg-ndmu-green-700 text-sm font-black text-white">
                 {hasServiceFields ? "3" : "2"}

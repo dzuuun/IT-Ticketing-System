@@ -3,6 +3,7 @@ import { Navigate } from "react-router-dom";
 import axios from "axios";
 import { useAuth } from "../context/AuthContext";
 import { getAccessToken, setAccessToken, setStoredUser } from "../services/api";
+import PasswordInput from "../components/PasswordInput";
 
 const inputClass =
   "w-full rounded-xl border border-slate-300 bg-white px-3.5 py-2.5 text-sm outline-none transition focus:border-ndmu-green-600 focus:ring-4 focus:ring-ndmu-green-100";
@@ -86,9 +87,10 @@ export default function UpdatePassword() {
               {error}
             </div>
           )}
-          <Field label="Current password">
-            <input
-              type="password"
+          <Field id="current-password" label="Current password">
+            <PasswordInput
+              id="current-password"
+              visibilityLabel="current password"
               autoComplete="current-password"
               required
               value={currentPassword}
@@ -96,9 +98,14 @@ export default function UpdatePassword() {
               className={inputClass}
             />
           </Field>
-          <Field label="New password" hint="Use at least 8 characters.">
-            <input
-              type="password"
+          <Field
+            id="new-password"
+            label="New password"
+            hint="Use at least 8 characters."
+          >
+            <PasswordInput
+              id="new-password"
+              visibilityLabel="new password"
               autoComplete="new-password"
               minLength="8"
               required
@@ -107,9 +114,10 @@ export default function UpdatePassword() {
               className={inputClass}
             />
           </Field>
-          <Field label="Confirm new password">
-            <input
-              type="password"
+          <Field id="confirm-new-password" label="Confirm new password">
+            <PasswordInput
+              id="confirm-new-password"
+              visibilityLabel="password confirmation"
               autoComplete="new-password"
               minLength="8"
               required
@@ -142,14 +150,16 @@ export default function UpdatePassword() {
   );
 }
 
-function Field({ label, hint, children }) {
+function Field({ id, label, hint, children }) {
   return (
-    <label className="block">
-      <span className="block text-xs font-bold text-slate-700">{label}</span>
+    <div className="block">
+      <label htmlFor={id} className="block text-xs font-bold text-slate-700">
+        {label}
+      </label>
       {hint && (
         <span className="mt-1 block text-[11px] text-slate-500">{hint}</span>
       )}
       <div className="mt-1.5">{children}</div>
-    </label>
+    </div>
   );
 }

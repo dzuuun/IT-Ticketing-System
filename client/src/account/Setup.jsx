@@ -2,6 +2,7 @@ import React, { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import axios from "axios";
 import { useAuth } from "../context/AuthContext";
+import PasswordInput from "../components/PasswordInput";
 
 export default function Setup() {
   const { user, completeSetup } = useAuth();
@@ -18,7 +19,6 @@ export default function Setup() {
   });
   const [error, setError] = useState("");
   const [saving, setSaving] = useState(false);
-  const [showPasswords, setShowPasswords] = useState(false);
 
   useEffect(() => {
     if (user) {
@@ -136,34 +136,24 @@ export default function Setup() {
             ["password", "Password"],
             ["confirm_password", "Confirm password"],
           ].map(([key, label]) => (
-            <label key={key}>
-              <span className="mb-1.5 block text-xs font-bold text-slate-700">
+            <div key={key}>
+              <label
+                htmlFor={`setup-${key}`}
+                className="mb-1.5 block text-xs font-bold text-slate-700"
+              >
                 {label} <span className="text-rose-500">*</span>
-              </span>
-              <div className="relative">
-                <input
-                  required
-                  minLength="8"
-                  type={showPasswords ? "text" : "password"}
-                  value={form[key]}
-                  onChange={(e) => setForm({ ...form, [key]: e.target.value })}
-                  className="h-11 w-full rounded-xl border border-slate-300 px-3 pr-11 text-sm outline-none focus:border-ndmu-green-600 focus:ring-4 focus:ring-ndmu-green-100"
-                />
-                <button
-                  type="button"
-                  onClick={() => setShowPasswords((visible) => !visible)}
-                  className="absolute inset-y-0 right-0 grid w-11 place-items-center rounded-r-xl text-slate-400 hover:text-ndmu-green-700 focus:outline-none focus:ring-2 focus:ring-inset focus:ring-ndmu-green-600"
-                  aria-label={
-                    showPasswords ? "Hide passwords" : "Show passwords"
-                  }
-                  aria-pressed={showPasswords}
-                >
-                  <span className="material-symbols-outlined text-lg">
-                    {showPasswords ? "visibility_off" : "visibility"}
-                  </span>
-                </button>
-              </div>
-            </label>
+              </label>
+              <PasswordInput
+                id={`setup-${key}`}
+                visibilityLabel={label.toLowerCase()}
+                required
+                minLength="8"
+                autoComplete="new-password"
+                value={form[key]}
+                onChange={(e) => setForm({ ...form, [key]: e.target.value })}
+                className="h-11 w-full rounded-xl border border-slate-300 px-3 text-sm outline-none focus:border-ndmu-green-600 focus:ring-4 focus:ring-ndmu-green-100"
+              />
+            </div>
           ))}
         </div>
         <button

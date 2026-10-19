@@ -72,6 +72,39 @@ setup endpoint is permanently unavailable after an account exists.
 - Requestor accounts require an `@ndmu.edu.ph` institutional email address.
   Guest ticket submission remains available without an account.
 
+## Bulk user imports
+
+User imports save valid accounts and skip rows with validation errors, existing
+emails, or duplicate emails. Passwords and the password column are optional;
+provided passwords must contain at least eight characters. The result shows
+imported and skipped counts and automatically downloads an Excel error report
+when rows are skipped. The report contains only skipped users, original workbook
+row numbers, and every validation error; it can be corrected and imported again.
+Passwords are left blank in the error report. A Download error report button is
+also available if the automatic download is blocked.
+
+## Google sign-in
+
+The login page uses Google's official Google Identity Services button. Set
+`GOOGLE_CLIENT_ID` in the server's private `.env` to a Web application client ID,
+then restart Node/PM2. No client secret is needed for this sign-in flow.
+
+In Google Cloud Console, add the public origin to **Authorized JavaScript
+origins**. For `http://localhost/it-ticketing-system/`, use `http://localhost`
+(without the path); for Vite development, also add `http://localhost:5173`.
+Production origins must use HTTPS. Set `CLIENT_URL` to the full application URL,
+including `/it-ticketing-system` when hosted under that path, so refresh cookies
+use the correct path. `GOOGLE_ALLOWED_DOMAIN` defaults to `ndmu.edu.ph`.
+
+The backend verifies Google's signature, audience, expiry, institutional email,
+Workspace domain, and a browser-bound nonce before issuing an application
+session. Roles come from the stored account. The login page shows an unavailable
+message when no Google client ID is configured, and password/guest access stays
+available.
+
+See Google's [button documentation](https://developers.google.com/identity/gsi/web/guides/display-button)
+and [client setup guide](https://developers.google.com/identity/gsi/web/guides/get-google-api-clientid).
+
 ## Google Workspace ticket email notifications
 
 Ticket notifications are disabled by default. To enable delivery through the

@@ -1,5 +1,4 @@
 const bcrypt = require("bcryptjs");
-const { OAuth2Client } = require("google-auth-library");
 const { query } = require("../db");
 const {
   linkRequestsToAccount,
@@ -36,7 +35,7 @@ const cookieOptions = () => ({
   secure: cookieSecure(),
   sameSite: cookieSameSite(),
   maxAge: refreshDays() * 86400000,
-  path: "/auth",
+  path: `${new URL(process.env.CLIENT_URL || "http://localhost:5173").pathname.replace(/\/$/, "")}/auth`,
 });
 const safeUser = (user) => ({
   id: user.id || user.user_id,
@@ -223,58 +222,18 @@ async function login(req, res) {
   }
 }
 
-function googleClient() {
-  return new OAuth2Client(
-    process.env.GOOGLE_CLIENT_ID,
-    process.env.GOOGLE_CLIENT_SECRET,
-    process.env.GOOGLE_CALLBACK_URL,
-  );
-}
-function googleLogin(req, res) {
-  if (
-    !process.env.GOOGLE_CLIENT_ID ||
-    !process.env.GOOGLE_CLIENT_SECRET ||
-    !process.env.GOOGLE_CALLBACK_URL
-  )
-    return res.status(503).json({
-      success: false,
-      message: "Google sign-in has not been configured.",
-    });
-  return res.redirect(
-    googleClient().generateAuthUrl({
-      access_type: "offline",
-      prompt: "select_account",
-      scope: ["openid", "email", "profile"],
-    }),
-  );
-}
-
-async function googleCallback(req, res) {
+async function googleLogin(req, res) {
   try {
-    if (!req.query.code)
-      return res.redirect(
-        `${process.env.CLIENT_URL || "http://localhost:5173"}/login?error=google`,
-      );
-    const client = googleClient();
-    const { tokens } = await client.getToken(req.query.code);
-    const ticket = await client.verifyIdToken({
-      idToken: tokens.id_token,
-      audience: process.env.GOOGLE_CLIENT_ID,
-    });
-    const profile = ticket.getPayload();
-    const email = profile.email?.toLowerCase();
-    const allowedDomain = process.env.GOOGLE_ALLOWED_DOMAIN;
-    if (
-      !email ||
-      !profile.email_verified ||
-      !isInstitutionalEmail(email) ||
-      (allowedDomain && !email.endsWith(`@${allowedDomain}`))
-    )
-      return res.status(403).send("Only verified NDMU accounts may sign in.");
+    const profile = req.googleProfile;
+    const email = profile.email;
     let [user] = await query(
       "SELECT * FROM users WHERE email = ? OR google_id = ?",
       [email, profile.sub],
     );
+    if (user && !user.is_active)
+      return res.status(403).json({ success: false, message: "This account has been deactivated." });
+    if (user?.google_id && user.google_id !== profile.sub)
+      return res.status(403).json({ success: false, message: "This account is linked to a different Google identity." });
     if (!user) {
       const result = await query(
         "INSERT INTO users (google_id, email, full_name, role, avatar_url) VALUES (?, ?, ?, 'requestor', ?)",
@@ -293,16 +252,12 @@ async function googleCallback(req, res) {
         "UPDATE users SET google_id = ?, avatar_url = COALESCE(?, avatar_url) WHERE id = ?",
         [profile.sub, profile.picture || null, user.id],
       );
-    if (!user.is_active)
-      return res.status(403).send("This account has been deactivated.");
+    await linkRequestsToAccount(query, user.id, email);
     const session = await issueSession(user, req, res);
-    const target = `${process.env.CLIENT_URL || "http://localhost:5173"}/login#access_token=${encodeURIComponent(session.accessToken)}`;
-    return res.redirect(target);
+    return res.json({ success: true, message: "Google sign-in successful.", ...session });
   } catch (error) {
-    console.error("[Google Callback Error]:", error);
-    return res.redirect(
-      `${process.env.CLIENT_URL || "http://localhost:5173"}/login?error=google`,
-    );
+    console.error("[Google Sign-in Error]:", error.message);
+    return res.status(500).json({ success: false, message: "Unable to sign in with Google." });
   }
 }
 
@@ -405,7 +360,6 @@ module.exports = {
   setup,
   login,
   googleLogin,
-  googleCallback,
   refresh,
   logout,
   updatePassword,

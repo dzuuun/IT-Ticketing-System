@@ -4,6 +4,7 @@ import { useAuth } from "../context/AuthContext";
 import api from "../services/api";
 import Modal from "../components/Modal";
 import ConfirmForm from "../components/ConfirmForm";
+import { createUserImportErrorWorkbook } from "../utils/userImportReport";
 
 const PAGE_SIZE = 15;
 const roles = [
@@ -45,6 +46,10 @@ export default function AdminUsers() {
   const [bulkErrors, setBulkErrors] = useState([]);
   const [bulkBusy, setBulkBusy] = useState(false);
   const [importedCount, setImportedCount] = useState(0);
+  const [bulkComplete, setBulkComplete] = useState(false);
+  const [skippedRows, setSkippedRows] = useState([]);
+  const [reportBusy, setReportBusy] = useState(false);
+  const [reportError, setReportError] = useState("");
 
   const fetchUsers = async () => {
     setLoading(true);
@@ -183,6 +188,33 @@ export default function AdminUsers() {
     setBulkRows([]);
     setBulkErrors([]);
     setImportedCount(0);
+    setBulkComplete(false);
+    setSkippedRows([]);
+    setReportError("");
+  };
+
+  const downloadErrorReport = async (errors = bulkErrors, rows = skippedRows) => {
+    setReportBusy(true);
+    setReportError("");
+    try {
+      const { default: ExcelJS } = await import("exceljs");
+      const workbook = createUserImportErrorWorkbook(ExcelJS, errors, rows);
+      const buffer = await workbook.xlsx.writeBuffer();
+      const url = URL.createObjectURL(new Blob([buffer], {
+        type: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+      }));
+      const link = document.createElement("a");
+      link.href = url;
+      link.download = `${bulkFileName.replace(/\.xlsx$/i, "") || "User_Import"}_Errors.xlsx`;
+      document.body.appendChild(link);
+      link.click();
+      link.remove();
+      URL.revokeObjectURL(url);
+    } catch {
+      setReportError("The error report could not be downloaded. Use Download error report to try again.");
+    } finally {
+      setReportBusy(false);
+    }
   };
 
   const downloadImportTemplate = async () => {
@@ -208,6 +240,8 @@ export default function AdminUsers() {
       fgColor: { argb: "FF075C3B" },
     };
     header.alignment = { vertical: "middle" };
+    worksheet.getCell("F1").note =
+      "Optional. Leave blank for Google sign-in or set a password later. If supplied, use at least 8 characters.";
     worksheet.autoFilter = { from: "A1", to: "F1" };
     worksheet.dataValidations.add("E2:E201", {
       type: "list",
@@ -226,7 +260,7 @@ export default function AdminUsers() {
       last_name: "Cruz",
       email: "juan.cruz@ndmu.edu.ph",
       role: "requestor",
-      password: "ChangeMe123!",
+      password: "",
     });
     example.getRow(1).font = { bold: true, color: { argb: "FFFFFFFF" } };
     example.getRow(1).fill = {
@@ -293,7 +327,6 @@ export default function AdminUsers() {
         "last_name",
         "email",
         "role",
-        "password",
       ];
       const missing = requiredHeaders.filter(
         (headerName) => !headers[headerName],
@@ -312,12 +345,14 @@ export default function AdminUsers() {
       worksheet.eachRow((row, rowNumber) => {
         if (rowNumber === 1) return;
         const values = Object.fromEntries(
-          requiredHeaders.map((headerName) => [
+          [...requiredHeaders, "password"].map((headerName) => [
             headerName,
-            row.getCell(headers[headerName]).text.trim(),
+            headers[headerName]
+              ? row.getCell(headers[headerName]).text.trim()
+              : "",
           ]),
         );
-        if (Object.values(values).some(Boolean)) rows.push(values);
+        if (Object.values(values).some(Boolean)) rows.push({ ...values, _row: rowNumber });
       });
       if (rows.length === 0)
         setBulkErrors([
@@ -346,9 +381,15 @@ export default function AdminUsers() {
     setBulkErrors([]);
     try {
       const response = await api.post("/users/bulk-import", { rows: bulkRows });
-      setImportedCount(response.data.imported || bulkRows.length);
+      const errors = response.data.errors || [];
+      const skipped = response.data.skipped_rows || [];
+      setImportedCount(response.data.imported ?? 0);
+      setBulkErrors(errors);
+      setSkippedRows(skipped);
+      setBulkComplete(true);
       setBulkRows([]);
       await fetchUsers();
+      if (errors.length) await downloadErrorReport(errors, skipped);
     } catch (error) {
       setBulkErrors(
         error.response?.data?.errors || [
@@ -681,7 +722,7 @@ export default function AdminUsers() {
 
       <Modal
         isOpen={bulkOpen}
-        onClose={() => !bulkBusy && setBulkOpen(false)}
+        onClose={() => !bulkBusy && !reportBusy && setBulkOpen(false)}
         title="Bulk Import User Accounts"
         maxWidth="max-w-4xl"
       >
@@ -692,9 +733,10 @@ export default function AdminUsers() {
                 Use the ICT-MIS import template
               </p>
               <p className="mt-1 max-w-xl text-[11px] leading-5 text-ndmu-green-800/75">
-                Keep the column names unchanged. Department values use Service
-                Catalog department codes, no ID number is required, and
+                Keep the column names unchanged. No ID number is required, and
                 requestor accounts must use an @ndmu.edu.ph email address.
+                Passwords are optional: leave blank for Google sign-in or set
+                one later. Supplied passwords must contain at least 8 characters.
               </p>
             </div>
             <button
@@ -709,7 +751,7 @@ export default function AdminUsers() {
             </button>
           </div>
 
-          {!importedCount && (
+          {!bulkComplete && (
             <label className="flex cursor-pointer flex-col items-center justify-center rounded-xl border border-dashed border-slate-300 bg-slate-50 px-6 py-8 text-center transition hover:border-ndmu-green-500 hover:bg-ndmu-green-50/40">
               <span
                 className={`material-symbols-outlined text-4xl ${bulkBusy ? "animate-spin text-ndmu-green-600" : "text-ndmu-green-700"}`}
@@ -737,19 +779,26 @@ export default function AdminUsers() {
             </label>
           )}
 
-          {importedCount > 0 && (
+          {bulkComplete && (
             <div className="rounded-xl border border-emerald-200 bg-emerald-50 px-5 py-7 text-center">
               <span className="material-symbols-outlined text-4xl text-emerald-600">
                 check_circle
               </span>
               <h3 className="mt-2 text-base font-black text-emerald-900">
-                Import completed
+                Import finished
               </h3>
               <p className="mt-1 text-xs text-emerald-700">
-                {importedCount}{" "}
-                {importedCount === 1 ? "account was" : "accounts were"} created
-                successfully.
+                {importedCount} accounts imported. {skippedRows.length} rows skipped.
+                {skippedRows.length > 0 && " Correct the skipped rows in the error report and upload it again."}
               </p>
+              <button
+                type="button"
+                onClick={resetBulkImport}
+                disabled={bulkBusy || reportBusy}
+                className="mt-3 rounded-lg border border-emerald-300 bg-white px-3 py-2 font-bold text-emerald-800 disabled:opacity-50"
+              >
+                Import another file
+              </button>
             </div>
           )}
 
@@ -757,7 +806,7 @@ export default function AdminUsers() {
             <div className="rounded-xl border border-rose-200 bg-rose-50 p-4">
               <div className="flex items-center gap-2 font-extrabold text-rose-800">
                 <span className="material-symbols-outlined text-lg">error</span>
-                {bulkErrors.length} validation{" "}
+                {bulkErrors.length} import{" "}
                 {bulkErrors.length === 1 ? "error" : "errors"} found
               </div>
               <div className="mt-3 max-h-40 space-y-1.5 overflow-y-auto">
@@ -773,13 +822,27 @@ export default function AdminUsers() {
                 ))}
               </div>
               <p className="mt-3 text-[10px] text-rose-600">
-                No accounts were imported. Correct the workbook and upload it
-                again.
+                {bulkComplete && importedCount > 0
+                  ? "Valid rows were imported. Only skipped rows are included in the report."
+                  : "No accounts were imported. Correct the errors in the report and upload it again."}
               </p>
+              <button
+                type="button"
+                onClick={() => downloadErrorReport()}
+                disabled={reportBusy || bulkBusy}
+                className="mt-3 inline-flex items-center gap-2 rounded-lg border border-rose-300 bg-white px-3 py-2 font-bold text-rose-800 disabled:opacity-50"
+              >
+                <span className="material-symbols-outlined text-base">download</span>
+                {reportBusy ? "Preparing report..." : "Download error report"}
+              </button>
+              <p className="mt-2 text-[10px] text-rose-600">
+                Passwords are left blank in the report. Re-enter them if needed before re-importing.
+              </p>
+              {reportError && <p role="alert" className="mt-2 text-xs text-rose-700">{reportError}</p>}
             </div>
           )}
 
-          {bulkRows.length > 0 && !importedCount && (
+          {bulkRows.length > 0 && !bulkComplete && (
             <div className="overflow-hidden rounded-xl border border-slate-200">
               <div className="flex items-center justify-between border-b border-slate-200 bg-slate-50 px-4 py-3">
                 <div>
@@ -843,13 +906,13 @@ export default function AdminUsers() {
           <div className="flex justify-end gap-2 border-t border-slate-100 pt-4">
             <button
               type="button"
-              disabled={bulkBusy}
+              disabled={bulkBusy || reportBusy}
               onClick={() => setBulkOpen(false)}
               className="rounded-xl bg-slate-100 px-4 py-2.5 font-bold text-slate-600 hover:bg-slate-200 disabled:opacity-50"
             >
-              {importedCount ? "Done" : "Cancel"}
+              {bulkComplete ? "Done" : "Cancel"}
             </button>
-            {bulkRows.length > 0 && !importedCount && (
+            {bulkRows.length > 0 && !bulkComplete && (
               <button
                 type="button"
                 disabled={bulkBusy}
