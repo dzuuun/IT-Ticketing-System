@@ -47,6 +47,7 @@ const apiRoutes = require("./api/index");
 const ticketController = require("./api/tickets/ticket.controller");
 const { startAutoCloseWorker } = require("./scripts/autoClose");
 const { verifyEmailTransport } = require("./api/services/emailService");
+const { serveFrontend } = require("./api/middleware/frontend");
 
 const app = express();
 const PORT = process.env.PORT || 5000;
@@ -87,7 +88,7 @@ app.use(
         ...(!usesHttps ? { upgradeInsecureRequests: null } : {}),
       },
     },
-    crossOriginOpenerPolicy: { policy: "same-origin-allow-popups" },
+    crossOriginOpenerPolicy: usesHttps ? { policy: "same-origin-allow-popups" } : false,
     originAgentCluster: usesHttps ? undefined : false,
     strictTransportSecurity: usesHttps ? undefined : false,
   }),
@@ -143,12 +144,7 @@ app.use("/api", apiRoutes);
 
 // Serve static frontend in production if built
 const clientDist = path.join(__dirname, "client/dist");
-if (require("fs").existsSync(clientDist)) {
-  app.use(express.static(clientDist));
-  app.get("/{*splat}", (req, res) => {
-    res.sendFile(path.join(clientDist, "index.html"));
-  });
-}
+serveFrontend(app, clientDist);
 
 // Global error handler
 app.use((err, req, res, next) => {

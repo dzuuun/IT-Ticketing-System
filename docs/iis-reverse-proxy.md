@@ -112,3 +112,23 @@ http://SERVER-IP:8080/setup
 Sign in, submit a small test ticket, and download an attachment to confirm
 both authentication cookies and protected uploads pass through IIS. For
 production use, add an HTTPS IIS binding and use its HTTPS URL instead.
+
+## Rebuilds and missing assets
+
+Build from the directory used by PM2. For the shared site, set
+`VITE_PUBLIC_BASE_PATH=/it-ticketing-system/` before building. The generated
+`client/dist/index.html` and the entire `client/dist/assets` directory must
+come from the same build; do not copy only the HTML or selected bundle files.
+
+After a successful build, restart the application and use Ctrl+F5 in the
+browser. Application HTML is served with `Cache-Control: no-store` so future
+navigations reference the current bundles. A page already open during a build
+may still need refreshing. If assets still return 404, compare the full failing
+URL against the script and stylesheet URLs in `client/dist/index.html`, and
+verify the shared-site IIS rule forwards `/it-ticketing-system/assets/...` to
+this application's Node process.
+
+For an HTTP LAN URL, set `CLIENT_URL` to that exact HTTP application URL.
+HTTPS-only headers are disabled for this mode. Google sign-in on a LAN IP
+requires an appropriate HTTPS domain; Google permits HTTP only for localhost
+development.
